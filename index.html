@@ -1,0 +1,2926 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nano Cortex Web Editor Prototype</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: #111315;
+      --panel2: #17191b;
+      --border: #34373a;
+      --text: #f0f0f0;
+      --muted: #a1a1a1;
+      --accent: #f0a020;
+      --green: #7fd35a;
+      --cyan: #22c7d7;
+      --purple: #8d67d9;
+      --pink: #d64b86;
+      --red: #d95043;
+      --white: #d8d8d8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #141719 0%, #050505 58%);
+      color: var(--text);
+    }
+
+    header {
+      height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 24px;
+      border-bottom: 1px solid #171717;
+      background: rgba(0, 0, 0, 0.76);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 15px;
+      letter-spacing: 0.16em;
+      color: #f4f4f4;
+      margin: 0;
+      font-weight: 650;
+      text-transform: uppercase;
+    }
+
+    .logo { width: 28px; height: 20px; opacity: 0.95; }
+
+    .status {
+      margin-left: auto;
+      font-size: 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot { width: 9px; height: 9px; border-radius: 999px; background: #555; }
+    .dot.connected { background: #45e35f; box-shadow: 0 0 10px rgba(69, 227, 95, 0.45); }
+
+    button, select, input { font: inherit; }
+
+    button {
+      background: linear-gradient(180deg, #191b1d, #111315);
+      color: var(--text);
+      border: 1px solid #3a3d40;
+      border-radius: 8px;
+      padding: 10px 18px;
+      cursor: pointer;
+      font-weight: 650;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    button:hover { border-color: var(--accent); }
+    button.primary { border-color: #9b650d; color: #ffbd5a; }
+
+    button.btn-small {
+      padding: 5px 12px;
+      font-size: 11px;
+      border-radius: 6px;
+      margin-left: 4px;
+    }
+
+    button.btn-disconnect { border-color: #7a2020; color: #e07070; }
+    button.btn-disconnect:hover { border-color: #e07070; }
+
+    main { padding: 24px; display: grid; gap: 18px; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 190px 140px 1fr 360px;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .preset-wrap { display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 14px; }
+    .preset-wrap label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: right;
+    }
+
+    select {
+      width: 100%;
+      background: #111315;
+      color: var(--text);
+      border: 1px solid #3a3d40;
+      border-radius: 8px;
+      padding: 10px 13px;
+      outline: none;
+      appearance: auto;
+    }
+
+    select:focus { border-color: var(--accent); }
+
+    .top-row { display: grid; grid-template-columns: 1.25fr 1.35fr 0.55fr; gap: 18px; align-items: stretch; }
+
+    .top-card, .block {
+      background: linear-gradient(180deg, rgba(23, 25, 27, 0.94), rgba(9, 10, 11, 0.94));
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+    }
+
+    .top-card { min-height: 120px; padding: 14px; }
+    .top-card h2, .block h2 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      color: #d4d4d4;
+      text-transform: uppercase;
+    }
+    
+    .current-item {
+     margin-top: 10px;
+     color: #cfcfcf;
+     font-size: 13px;
+     line-height: 1.35;
+     min-height: 18px;
+    }
+
+    .gate-layout { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; }
+    .chain-title { color: var(--muted); font-size: 13px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: -6px; }
+    .chain { display: grid; grid-template-columns: repeat(5, minmax(190px, 1fr)); gap: 14px; overflow-x: auto; padding-bottom: 4px; }
+
+    .block { min-height: 465px; padding: 16px; border-color: color-mix(in srgb, var(--block-color) 55%, var(--border)); }
+
+    .amp-panel {
+      background: linear-gradient(180deg, rgba(23, 25, 27, 0.94), rgba(9, 10, 11, 0.94));
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015);
+      border-color: color-mix(in srgb, var(--block-color) 55%, var(--border));
+      padding: 16px;
+    }
+    .block.active { border-color: var(--block-color); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--block-color) 20%, transparent); }
+
+    .block-head { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .block h2 { color: var(--block-color); margin: 0; }
+    .model-select { border-color: color-mix(in srgb, var(--block-color) 42%, #333); margin-bottom: 14px; }
+    .divider { height: 1px; background: #2d3033; margin: 12px 0 18px; }
+
+    .toggle-switch {
+      width: 46px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--block-color) 65%, #555);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .toggle-switch.on { justify-content: flex-end; }
+    .toggle-dot { width: 18px; height: 18px; border-radius: 50%; background: #d8d8d8; box-shadow: 0 0 10px color-mix(in srgb, var(--block-color) 45%, transparent); }
+    .toggle-switch.on .toggle-dot { background: var(--block-color); }
+
+    .param-grid { display: grid; grid-template-columns: repeat(2, minmax(78px, 1fr)); gap: 14px 12px; align-items: start; }
+    .knob-param { display: grid; justify-items: center; gap: 6px; }
+    .param-name { color: #d0d0d0; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; min-height: 14px; }
+
+    .knob {
+      --pct: 50%;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, #121212 0 46%, transparent 48%),
+        conic-gradient(from 220deg, var(--block-color) 0 var(--pct), #2a2c2e var(--pct) 73%, transparent 73% 100%);
+      border: 1px solid #070707;
+      position: relative;
+      box-shadow: inset 0 0 10px rgba(0,0,0,.9), 0 0 0 1px #242424;
+      cursor: ns-resize;
+    }
+
+    .knob::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 8px;
+      width: 2px;
+      height: 18px;
+      background: #e8e8e8;
+      border-radius: 2px;
+      transform-origin: 50% 20px;
+      transform: translateX(-50%) rotate(var(--angle));
+    }
+
+    .value-text { color: #c9c9c9; font-size: 12px; cursor: pointer; padding: 2px 6px; border-radius: 5px; }
+    .value-text:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+    .switch-param { display: grid; justify-items: center; gap: 6px; min-width: 0; }
+    .switch-pill {
+      min-width: 58px;
+      max-width: 76px;
+      padding: 7px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      line-height: 1;
+      color: var(--block-color);
+      border-color: var(--block-color);
+      background: color-mix(in srgb, var(--block-color) 10%, #111315);
+      letter-spacing: 0.04em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .switch-pill:hover { border-color: var(--block-color); }
+
+    .unsupported { display: none; padding: 12px; border: 1px solid #5a2c2c; background: #1c0f0f; color: #ffb2b2; border-radius: 10px; }
+
+
+    .knob-param.param-disabled,
+    .switch-param.param-disabled,
+    .stepped-param.param-disabled {
+      opacity: 0.38;
+      filter: grayscale(0.6);
+      pointer-events: none;
+    }
+
+    .mini-param-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(70px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .placeholder-param {
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+      opacity: 0.46;
+      pointer-events: none;
+    }
+
+    .range-input {
+      width: 100%;
+      accent-color: var(--block-color);
+    }
+
+    .stepped-param {
+      grid-column: span 2;
+      display: grid;
+      gap: 7px;
+      justify-items: center;
+    }
+
+    .stepped-select {
+      width: 160px;
+      border-color: color-mix(in srgb, var(--block-color) 45%, #333);
+    }
+
+    .param-unit {
+      color: #8f8f8f;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      min-height: 12px;
+    }
+
+    .beta-footer {
+      border-top: 1px solid #24272a;
+      padding: 14px 4px 2px;
+      color: #8f8f8f;
+      font-size: 11px;
+      line-height: 1.5;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    .beta-footer strong { color: #cfcfcf; font-weight: 650; }
+
+    @media (max-width: 1050px) {
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .top-row { grid-template-columns: 1fr; }
+      .chain { grid-template-columns: repeat(5, 230px); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Nano Cortex Web Editor</h1>
+    <div class="status">
+      <span id="dot" class="dot"></span><span id="status">Disconnected</span>
+      <button id="refreshBtn" class="btn-small">Refresh</button>
+      <button id="disconnectBtn" class="btn-small btn-disconnect">Disconnect</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="unsupported" class="unsupported">Web Bluetooth is not available in this browser. Use Chrome or Edge on desktop.</div>
+
+    <section class="toolbar">
+      <button id="connectBtn" class="primary">Connect</button>
+      <button id="saveBtn" class="primary">Save</button>
+      <span></span>
+      <div class="preset-wrap"><label for="presetSelect">Preset</label><select id="presetSelect"></select></div>
+    </section>
+
+    <section class="top-row">
+
+    <div class="top-card" style="--block-color: var(--white);">
+      <div class="block-head">
+        <h2>Capture</h2>
+        <div id="captureToggle" class="toggle-switch on">
+          <div class="toggle-dot"></div>
+        </div>
+      </div>
+
+      <select id="captureSelect"></select>
+
+      <div id="currentCaptureText" class="current-item">
+        Current: —
+      </div>
+
+      <div style="margin-top:12px;">
+        <label style="
+          display:block;
+          font-size:11px;
+          letter-spacing:0.12em;
+          text-transform:uppercase;
+          color:#bdbdbd;
+          margin-bottom:6px;
+        ">
+          Capture Volume
+        </label>
+
+        <input
+          id="captureVolumeSlider"
+          type="range"
+          min="-24"
+          max="12"
+          step="0.1"
+          value="0"
+          style="width:100%;"
+        >
+
+        <div
+          id="captureVolumeValue"
+          style="
+            margin-top:4px;
+            font-size:12px;
+            color:#d0d0d0;
+            text-align:right;
+          "
+        >
+          0.0 dB
+        </div>
+      </div>
+
+      <div id="captureExtraParams" class="mini-param-grid"></div>
+    </div>
+
+  <div class="top-card" style="--block-color: var(--white);">
+    <div class="block-head">
+      <h2>Cab / IR</h2>
+      <div id="cabIRToggle" class="toggle-switch on">
+        <div class="toggle-dot"></div>
+      </div>
+    </div>
+
+    <select id="irSelect"></select>
+
+    <div id="currentIRText" class="current-item">
+      Current: —
+    </div>
+
+    <div id="irExtraParams" class="mini-param-grid"></div>
+  </div>
+
+  <div class="top-card" style="--block-color: var(--white);">
+    <div class="gate-layout">
+
+      <div>
+        <h2>Gate</h2>
+        <div id="gateToggle" class="toggle-switch">
+          <div class="toggle-dot"></div>
+        </div>
+      </div>
+
+      <div id="gateParams"></div>
+
+    </div>
+  </div>
+
+</section>
+
+    <div class="chain-title">Amp</div>
+    <section class="amp-panel" style="--block-color: var(--white);">
+      <div id="ampKnobs" style="display:grid; grid-template-columns: repeat(5, minmax(90px, 1fr)); gap: 14px;"></div>
+    </section>
+
+    <div class="chain-title">FX Blocks</div>
+    <section class="chain" id="chain"></section>
+
+    <footer class="beta-footer">
+      <strong>Nano Cortex Web Editor</strong><br>
+      Tested firmware: 2.2.1 &nbsp;|&nbsp; Unofficial community project &nbsp;|&nbsp; Not affiliated with Neural DSP<br>
+      Use at your own risk. Back up presets in Cortex Cloud before testing.
+    </footer>
+  </main>
+
+
+  <script>
+    const NANO_NAME_PREFIX = 'Neural DSP Nano Cortex';
+    const SERVICE_UUIDS = ['0000a002-0000-1000-8000-00805f9b34fb', '0000a003-0000-1000-8000-00805f9b34fb'];
+    const C304_UUID = '0000c304-0000-1000-8000-00805f9b34fb';
+    const C305_UUID = '0000c305-0000-1000-8000-00805f9b34fb';
+
+    const FX_BLOCK_KEYS = ['pre1', 'pre2', 'post1', 'post2', 'post3'];
+
+    const DELAY_SYNC_NOTES_FULL = [
+      '1/64T', '1/64', '1/32T', '1/64D', '1/32',
+      '1/16T', '1/32D', '1/16', '1/8T', '1/16D',
+      '1/8', '1/4T', '1/8D', '1/4', '1/2T',
+      '1/4D', '1/2', '1/1T', '1/2D', '1/1', '1/1D'
+    ];
+
+    const SYNC_NOTES_1_16_UP = [
+      '1/16', '1/8T', '1/16D', '1/8', '1/4T', '1/8D',
+      '1/4', '1/2T', '1/4D', '1/2', '1/1T', '1/2D', '1/1', '1/1D'
+    ];
+
+    const SYNC_NOTES_1_8_UP = [
+      '1/8', '1/4T', '1/8D', '1/4', '1/2T', '1/4D',
+      '1/2', '1/1T', '1/2D', '1/1', '1/1D'
+    ];
+
+    const SYNC_NOTES_1_32_UP = [
+      '1/32', '1/16T', '1/32D', '1/16', '1/8T', '1/16D',
+      '1/8', '1/4T', '1/8D', '1/4', '1/2T', '1/4D',
+      '1/2', '1/1T', '1/2D', '1/1', '1/1D'
+    ];
+
+    function rangeMeta(min, max, step, unit = '', decimals = null) {
+      return { kind: 'range', min, max, step, unit, decimals };
+    }
+
+    function enumMeta(options) {
+      return { kind: 'enum', options };
+    }
+
+    function knob(name, index, value = null, meta = null) {
+      const resolvedMeta = meta || inferParamMeta('', name);
+      return {
+        type: resolvedMeta.kind === 'enum' ? 'switch' : 'knob',
+        name,
+        index,
+        value: value === null ? defaultParamValue(resolvedMeta) : value,
+        meta: resolvedMeta,
+        labels: resolvedMeta.kind === 'enum' ? resolvedMeta.options : null
+      };
+    }
+
+    function makeParams(labels, modelName = '') {
+      return labels.map((label, index) => {
+        const parsed = parseParamLabel(label);
+        const meta = inferParamMeta(modelName, parsed.name, parsed.options);
+        return {
+          type: meta.kind === 'enum' ? 'switch' : 'knob',
+          name: parsed.name,
+          index,
+          labels: meta.kind === 'enum' ? meta.options : null,
+          value: defaultParamValue(meta),
+          meta
+        };
+      });
+    }
+
+    function parseParamLabel(label) {
+      const open = label.indexOf('(');
+      const close = label.lastIndexOf(')');
+
+      if (open > -1 && close > open) {
+        const name = label.slice(0, open).trim();
+        const optionText = label.slice(open + 1, close).replace(/two way switch/ig, '').replace(/three way switch/ig, '').trim();
+        const options = optionText.split('/').map(x => x.trim()).filter(Boolean);
+        return { name, options };
+      }
+
+      return { name: label.trim(), options: null };
+    }
+
+    function device(name, category, labels, modelID, displayOrder = null) {
+      return { name, category, id: modelID || null, params: makeParams(labels, name), displayOrder };
+    }
+
+    function defaultParamValue(meta) {
+      if (!meta) return 5;
+
+      if (meta.kind === 'enum') {
+        const offIndex = meta.options.findIndex(x => String(x).toLowerCase() === 'off');
+        return offIndex >= 0 ? offIndex : 0;
+      }
+
+      if (typeof meta.defaultValue === 'number') return meta.defaultValue;
+      if (meta.min !== undefined && meta.max !== undefined) return roundToStep((meta.min + meta.max) / 2, meta.step || 0.1);
+
+      return 5;
+    }
+
+    function inferParamMeta(modelName, paramName, inlineOptions = null) {
+      const p = normaliseName(paramName);
+      const m = normaliseName(modelName);
+
+      if (inlineOptions && inlineOptions.length > 1) return enumMeta(correctOptions(inlineOptions));
+
+      if (p.includes('sync note')) return enumMeta(syncNoteOptionsForModel(modelName, paramName));
+      if (p === 'sync' || p === 'sync l' || p === 'sync r') return enumMeta(['Off', 'On']);
+
+      const enumOverride = enumParamOptions(modelName, paramName);
+      if (enumOverride) return enumMeta(enumOverride);
+
+      const exact = exactRangeMeta(modelName, paramName);
+      if (exact) return exact;
+
+      if (p.includes('gain') || p.includes('level') || p.includes('tone') || p.includes('volume') ||
+          p.includes('drive') || p.includes('distortion') || p.includes('filter') ||
+          p.includes('fuzz') || p.includes('bass') || p.includes('treble') ||
+          p.includes('blend') || p.includes('sensitivity') || p === 'sens' ||
+          p.includes('color') || p.includes('intensity')) {
+        return rangeMeta(0, 10, 0.1, '', 1);
+      }
+
+      return rangeMeta(0, 10, 0.1, '', 1);
+    }
+
+    function correctOptions(options) {
+      const corrected = options.map(option => {
+        const s = String(option).trim();
+        if (s === '1,32D') return '1/32D';
+        if (s === 'CHO2') return 'CHO2';
+        return s;
+      });
+
+      // Every binary (On/Off)-style switch we've verified against real captured
+      // packets (Sync, Ping Pong, Vibe, LFO Active) has turned out to put "Off"
+      // at the real device's index 0 and "On" at index 1 -- the opposite of how
+      // these labels are written inline in the model definitions below (e.g.
+      // 'Ping Pong (On/Off)' parses to ['On','Off']). Until each individual
+      // inline-labeled switch gets its own confirmed packet, this normalizes
+      // them all to the pattern that's held consistently so far.
+      if (corrected.length === 2 && corrected[0].toLowerCase() === 'on' && corrected[1].toLowerCase() === 'off') {
+        return [corrected[1], corrected[0]];
+      }
+
+      return corrected;
+    }
+
+    function enumParamOptions(modelName, paramName) {
+      const p = normaliseName(paramName);
+      const m = normaliseName(modelName);
+
+      if (p === 'ratio' && m.includes('legendary 87')) return ['4', '8', '12', '20', 'All'];
+      if (p === 'ratio' && m.includes('solid state comp')) return ['2', '4', '10'];
+      if (p === 'dyn mode') return ['Off', 'Duck', 'Gate'];
+      if (p === 'tap preset') return ['1', '2', '3', '4', '4 Alt', '5', '5 Alt', '6', '6 Alt'];
+      if (p === 'size') return ['Small', 'Medium', 'Large'];
+      if (p === 'mode' && m.includes('chief dc2w')) return ['1', '2', '3', '4', '1+2', '1+3', '1+4', '2+3', '2+4', '3+4'];
+      if (p === 'mode type') return ['S', 'SDD-320'];
+      if (p === 'type' && m.includes('chief ce2w')) return ['CE2-C', 'CE1-C', 'CE1-V'];
+      if (p === 'mode' && m.includes('dream chorus')) return ['CHO1', 'CHO2'];
+      if (p === 'type' && m.includes('mx phase')) return ['90', '45'];
+      if (p === 'mode' && m.includes('mx phase')) return ['Block', 'Script'];
+      if (p === 'vibe') return ['Off', 'On'];
+      if (p === 'waveform') return ['Sine', 'Triangle', 'Square', 'Saw Up', 'Saw Dn'];
+      if (p === 'lfo active') return ['Off', 'On'];
+      if (p === 'feedback mode') return ['Reverse', 'Flip'];
+      if (p === 'trigger mode') return ['Off', 'Full', '1/2'];
+      if (p === 'filter cutoff') return ['Low', 'A', 'B', 'High'];
+      if (p === 'filter type') return ['Lowpass', 'Bandpass', 'Highpass'];
+      if (p.includes('slope')) return ['Flat', '-6', '-12', '-18', '-24', '-30', '-36', '-42', '-48'];
+      if (p.endsWith(' type') && (p.startsWith('1 ') || p.startsWith('2 ') || p.startsWith('3 '))) return ['Peak', 'Hi Pass', 'Lo Pass', 'Hi Shelf', 'Lo Shelf'];
+
+      return null;
+    }
+
+    function syncNoteOptionsForModel(modelName, paramName) {
+      const m = normaliseName(modelName);
+
+      if (m.includes('analog delay')) return SYNC_NOTES_1_16_UP;
+      if (m.includes('circular delay') || m.includes('digital delay') || m.includes('dual delay') || m.includes('dual reverse') || m.includes('tape delay')) return DELAY_SYNC_NOTES_FULL;
+
+      if (m.includes('chorus 229t')) return SYNC_NOTES_1_8_UP;
+      if (m.includes('mx phase') || m.includes('tremolo')) return SYNC_NOTES_1_32_UP;
+
+      return SYNC_NOTES_1_16_UP;
+    }
+
+    function exactRangeMeta(modelName, paramName) {
+      const p = normaliseName(paramName);
+      const m = normaliseName(modelName);
+
+      if (p === 'wah') return rangeMeta(0, 1, 0.01, '', 2);
+      if (p === 'lp/bp/hp') return rangeMeta(-1, 1, 0.01, '', 2);
+      if (p === 'noise reduction') return rangeMeta(0, 100, 0.1, '%', 1);
+
+      if (p.includes('65hz') || p.includes('125hz') || p.includes('250hz') || p.includes('500hz') ||
+          p.includes('1khz') || p.includes('2khz') || p.includes('4khz') || p.includes('8khz') ||
+          p.includes('16khz')) return rangeMeta(-12, 12, 0.1, 'dB', 1);
+
+      if (p.includes('gain') && (p.startsWith('1 ') || p.startsWith('2 ') || p.startsWith('3 '))) return rangeMeta(-12, 12, 0.1, 'dB', 1);
+      if (p.includes('output')) return rangeMeta(-12, 12, 0.1, 'dB', 1);
+      if (m.includes('graphic 9') && p === 'output') return rangeMeta(-20, 20, 0.1, 'dB', 1);
+      if (m.includes('low-high cut') && p === 'output') return rangeMeta(-20, 20, 0.1, 'dB', 1);
+      if (m.includes('parametric 3') && p === 'output') return rangeMeta(-20, 20, 0.1, 'dB', 1);
+
+      if (p.includes('threshold') && m.includes('utility gate')) return rangeMeta(-90, 0, 0.1, 'dB', 1);
+      if (p === 'range' && m.includes('utility gate')) return rangeMeta(-90, -6, 0.1, 'dB', 1);
+
+      if (p.includes('threshold') && (m.includes('digital delay') || m.includes('dual delay') || m.includes('dual reverse'))) return rangeMeta(-65, -10, 0.1, 'dB', 1);
+      if (p.includes('threshold')) return rangeMeta(-60, 12, 0.1, 'dB', 1);
+
+      if (p === 'input' && m.includes('legendary')) return rangeMeta(-48, 0, 0.1, 'dB', 1);
+      if (p === 'makeup') return rangeMeta(-48, 48, 0.01, 'dB', 2);
+
+      if (p === 'dry level' || p === 'fx level') return rangeMeta(-40, 12, 0.1, 'dB', 1);
+      if (p === 'spread') return rangeMeta(3, 60, 0.01, 'ms', 2);
+
+      if (p.includes('mix') || p.includes('depth') || p.includes('width') || p === 'boost' ||
+          p === 'duty cycle' || p === 'smoothing' || p === 'overlap' || p === 'x-feedback' ||
+          p === 'feedback depth' || p === 'feedback l' || p === 'feedback r' || p === 'feedback' ||
+          p === 'diffusion' || p === 'mod depth' || p === 'level') return rangeMeta(0, 100, 0.1, '%', 1);
+
+      if (p === 'drive' && (m.includes('chief dc2w') || m.includes('tape delay'))) return rangeMeta(0, 100, 1, '%', 0);
+      if (p === 'mod rate') return rangeMeta(0.1, 10, 0.1, 'Hz', 1);
+      if (p === 'rate' && m.includes('tremolo')) return rangeMeta(0.1, 20, 0.1, 'Hz', 1);
+      if ((p === 'rate' || p === 'speed') && m.includes('chorus 229t')) return rangeMeta(0.2, 3, 0.01, 'Hz', 2);
+      if (p === 'mod speed') return rangeMeta(0.1, 5, 0.01, 'Hz', 2);
+      if (p === 'rate' || p === 'speed') return rangeMeta(0, 100, 1, '%', 0);
+
+      if (p.includes('attack') && m.includes('legendary')) return rangeMeta(0.02, 0.8, 0.01, 'ms', 2);
+      if (p.includes('release') && m.includes('legendary')) return rangeMeta(0.06, 1.1, 0.01, 's', 2);
+      if (p.includes('attack') && m.includes('solid state')) return rangeMeta(0.1, 30, 0.01, 'ms', 2);
+      if (p.includes('release') && m.includes('solid state')) return rangeMeta(0.01, 1.2, 0.01, 's', 2);
+      if (p.includes('attack') && (m.includes('opto') || m.includes('vca'))) return rangeMeta(1, 250, 0.01, 'ms', 2);
+      if (p.includes('release') && (m.includes('opto') || m.includes('vca'))) return rangeMeta(50, 1200, 1, 'ms', 0);
+
+      if (p.includes('attack') && (m.includes('digital delay') || m.includes('dual delay') || m.includes('dual reverse'))) return rangeMeta(1, 2000, 1, 'ms', 0);
+      if (p.includes('release') && (m.includes('digital delay') || m.includes('dual delay') || m.includes('dual reverse'))) return rangeMeta(1, 2000, 1, 'ms', 0);
+      if (p.includes('fade in') || p.includes('fade out')) return rangeMeta(1, 5000, 1, 'ms', 0);
+
+      if (p.includes('attack')) return rangeMeta(1, 1000, 1, 'ms', 0);
+      if (p.includes('hold')) return rangeMeta(1, 2000, 1, 'ms', 0);
+      if (p.includes('release')) return rangeMeta(2, 5000, 1, 'ms', 0);
+
+      if (p.includes('q') && (p.startsWith('1 ') || p.startsWith('2 ') || p.startsWith('3 '))) return rangeMeta(0.1, 10, 0.1, '', 1);
+      if (p === 'reso') return rangeMeta(1, 10, 0.01, '', 2);
+      if (p === 'ratio' && (m.includes('opto') || m.includes('vca'))) return rangeMeta(2, m.includes('opto') ? 20 : 10, 0.01, '', 2);
+      if (p === 'knee') return rangeMeta(1, 20, 0.01, 'dB', 2);
+
+      if (p === 'semitones') return rangeMeta(-12, 12, 1, 'Sem', 0);
+      if (p === 'pitch fine') return rangeMeta(-100, 100, 1, 'Cent', 0);
+
+      if (p.includes('freq')) return rangeMeta(20, 20000, 1, 'Hz', 0);
+      if (p === 'hpf' || p === 'high pass') {
+        if (m.includes('tape delay')) return rangeMeta(80, 800, 1, 'Hz', 0);
+        if (m.includes('transpose')) return rangeMeta(20, 2000, 1, 'Hz', 0);
+        return rangeMeta(20, 800, 1, 'Hz', 0);
+      }
+      if (p === 'lpf' || p === 'low pass') {
+        if (m.includes('tape delay')) return rangeMeta(800, 6000, 1, 'Hz', 0);
+        if (m.includes('transpose')) return rangeMeta(200, 19900, 1, 'Hz', 0);
+        if (m.includes('ambience') || m.includes('hall') || m.includes('mind hall') || m.includes('modulated') || m.includes('room')) return rangeMeta(800, 12000, 1, 'Hz', 0);
+        if (m.includes('cave')) return rangeMeta(800, 8000, 1, 'Hz', 0);
+        return rangeMeta(1000, 16000, 1, 'Hz', 0);
+      }
+
+      if (p === 'delay time' || p === 'delay time l' || p === 'delay time r') {
+        if (m.includes('analog delay')) return rangeMeta(200, 1100, 0.1, 'ms', 1);
+        if (m.includes('circular delay')) return rangeMeta(27, 2000, 0.01, 'ms', 2);
+        if (m.includes('dual reverse')) return rangeMeta(20, 4000, 1, 'ms', 0);
+        return rangeMeta(7, 6000, 1, 'ms', 0);
+      }
+
+      if (p === 'pre delay') {
+        if (m.includes('ambience')) return rangeMeta(0, 100, 0.1, 'ms', 1);
+        if (m.includes('hall') || m.includes('room')) return rangeMeta(1, 100, 0.1, 'ms', 1);
+        return rangeMeta(1, 200, 0.1, 'ms', 1);
+      }
+
+      if (p === 'decay') {
+        if (m.includes('cave')) return rangeMeta(5, 20, 0.01, 's', 2);
+        if (m.includes('hall') || m.includes('modulated')) return rangeMeta(1, 10, 0.01, 's', 2);
+        if (m.includes('room')) return rangeMeta(0.1, 2, 0.01, 's', 2);
+        if (m.includes('mind hall')) return rangeMeta(0, 100, 0.1, '%', 1);
+      }
+
+      if (p === 'damping') return rangeMeta(0, 100, 0.1, '%', 1);
+      if (p === 'dyn depth') return rangeMeta(0, 60, 0.1, 'dB', 1);
+      if (p === 'trig threshold') return rangeMeta(-40, 0, 0.1, 'dB', 1);
+
+      return null;
+    }
+
+    function normaliseName(value) {
+      return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    const deviceModels = {
+      overdrive: [
+        device('Chief BD2', 'Overdrive', ['Gain', 'Tone', 'Volume'], [0x12]),
+        device('Chief OD1', 'Overdrive', ['Gain', 'Level'], [0x0D]),
+        device('Exotic', 'Overdrive', ['Gain', 'Bass', 'Treble', 'Volume'], [0x06]),
+        device('Exotic Bass Z Boost', 'Overdrive', ['Gain', 'Bass', 'Treble', 'Volume'], [0xBF, 0x17]),
+        device('Exotic Z Boost', 'Overdrive', ['Gain', 'Bass', 'Treble', 'Volume'], [0x17]),
+        device('Facial Fuzz', 'Overdrive', ['Fuzz', 'Volume', 'Pickup (HB/Single)', 'Pickup Level'], [0x16]),
+        device('Green 808', 'Overdrive', ['Overdrive', 'Tone', 'Level'], [0x1B]),
+        device('Microtubes B3K', 'Overdrive', ['Drive', 'Growl (On/Off)', 'Midboost (On/Off)', 'Tone', 'Level', 'Blend'], [0xB8, 0x17]),
+        device('OD250', 'Overdrive', ['Gain', 'Volume'], [0x03]),
+        device('Obsessive Drive', 'Overdrive', ['Drive', 'Peak (LP/HP)', 'Tone', 'Volume'], [0x02]),
+        device('Rodent Drive', 'Overdrive', ['Distortion', 'Filter', 'Volume'], [0x04])
+      ],
+      utility: [
+        device('Adaptive Gate', 'Utility', ['Noise Reduction'], [0x81, 0x7D]),
+        device('Graphic 9', 'Utility', ['65Hz', '125Hz', '250Hz', '500hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz', 'HPF', 'LPF', 'Output'], [0xA5, 0x1F]),
+        device('Low-High Cut', 'Utility', ['HPF Slope', 'HPF Freq', 'LPF Slope', 'LPF Freq', 'Output'], [0xA3, 0x1F]),
+        device('Parametric 3', 'Utility', ['1 Gain', '1 Freq', '1 Q', '1 Type (Peak/Hi Pass/Lo Pass/Hi Shelf/Lo Shelf)', '1 Active (On/Off)', '2 Gain', '2 Freq', '2 Q', '2 Type (Peak/Hi Pass/Lo Pass/Hi Shelf/Lo Shelf)', '2 Active (On/Off)', '3 Gain', '3 Freq', '3 Q', '3 Type (Peak/Hi Pass/Lo Pass/Hi Shelf/Lo Shelf)', '3 Active (On/Off)', 'Output'], [0xA1, 0x1F]),
+        device('Utility Gate', 'Utility', ['Threshold', 'Attack', 'Hold', 'Release', 'Range'], [0x82, 0x7D]),
+        device('Volume', 'Utility', ['Level', 'Curve (Linear/Log)'], [0x86, 0x7D])
+      ],
+      wahFilter: [
+        device('Bass Wah', 'Wah/Filter', ['Wah'], [0xB4, 0x46]),
+        device('Bubba Wah', 'Wah/Filter', ['Wah'], [0xB2, 0x46]),
+        device('Crying Clyde Wah', 'Wah/Filter', ['Wah'], [0xB6, 0x46]),
+        device('Crying Wah', 'Wah/Filter', ['Wah'], [0xB5, 0x46]),
+        device('Envelope Filter', 'Wah/Filter', ['Sens', 'Attack', 'Decay', 'LP/BP/HP', 'Level', 'Freq', 'Freq Depth', 'Reso', 'Mix'], [0xC6, 0xBB, 0x01]),
+        device('Love Meat', 'Wah/Filter', ['Sensitivity', 'Attack', 'Decay', 'Color', 'Intensity', 'Blend', 'Trig Detection (Down/Up)', 'Trigger Mode', 'Filter Cutoff', 'Filter Type', 'Level'], [0xC1, 0xBB, 0x01])
+      ],
+      compressor: [
+        device('Legendary 87 (M)', 'Compressor', ['Input', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x89, 0x27]),
+        device('Opto Comp (M)', 'Compressor', ['Threshold', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x8F, 0x27]),
+        device('Solid State Comp (M)', 'Compressor', ['Threshold', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x8C, 0x27]),
+        device('VCA Comp (M)', 'Compressor', ['Threshold', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x8D, 0x27])
+      ],
+      pitch: [
+        device('Transpose', 'Pitch', ['Mix', 'Semitones', 'Pitch Fine', 'High Pass', 'Low Pass'], [0xD1, 0x8C, 0x01])
+      ],
+      postUtilityEQ: [
+        device('Doubler', 'Utility/EQ', ['Spread', 'Dry Level', 'FX Level'], [0x8B, 0x7D]),
+        device('Graphic 9', 'Utility/EQ', ['65Hz', '125Hz', '250Hz', '500hz', '1kHz', '2kHz', '4kHz', '8kHz', '16kHz', 'HPF', 'LPF', 'Output'], [0xA5, 0x1F]),
+        device('Low-High Cut', 'Utility/EQ', ['HPF Slope', 'HPF Freq', 'LPF Slope', 'LPF Freq', 'Output'], [0xA3, 0x1F]),
+        device('Parametric 3', 'Utility/EQ', ['1 Gain', '1 Freq', '1 Q', '1 Type (Peak/Hi Pass/Lo Pass/Hi Shelf/Lo Shelf)', '1 Active (On/Off)', '2 Gain', '2 Freq', '2 Q', '2 Type (Peak/Hi Pass/Lo Pass/Hi Shelf/Lo Shelf)', '2 Active (On/Off)', '3 Gain', '3 Freq', '3 Q', '3 Type (Peak/Hi Pass/Lo Pass/Hi Shelf/Lo Shelf)', '3 Active (On/Off)', 'Output'], [0xA1, 0x1F]),
+        device('Legendary 87 (ST)', 'Utility/EQ', ['Input', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x94, 0x27]),
+        device('Opto Comp (ST)', 'Utility/EQ', ['Threshold', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x97, 0x27]),
+        device('Solid State Comp (ST)', 'Utility/EQ', ['Threshold', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x95, 0x27]),
+        device('VCA Comp (ST)', 'Utility/EQ', ['Threshold', 'Ratio', 'Attack', 'Release', 'Makeup', 'Mix'], [0x96, 0x27])
+      ],
+      modulation: [
+        device('Chief CE2W (ST)', 'Modulation', ['Mix', 'Rate', 'Depth', 'Type', 'Width', 'Output', 'Sync (On/Off)', 'Sync Note'], [0xF0, 0x36], [0, 1, 6, 7, 2, 3, 4, 5]),
+        device('Chief DC2W (ST)', 'Modulation', ['Mix', 'Mode', 'Mode Type', 'Drive', 'Output'], [0xF3, 0x36]),
+        device('Chorus 229T', 'Modulation', ['Mix', 'Rate', 'Depth', 'Width', 'Output', 'Sync (On/Off)', 'Sync Note'], [0xEF, 0x36], [0, 1, 5, 6, 2, 3, 4]),
+        device('Dream Chorus', 'Modulation', ['Mix', 'Speed', 'Depth', 'Mode', 'Output', 'Sync (On/Off)', 'Sync Note'], [0xEE, 0x36], [0, 1, 5, 6, 2, 3, 4]),
+        device('MX Flanger', 'Modulation', ['Mix', 'Manual', 'Width', 'Speed', 'Regen', 'Output', 'Sync (On/Off)', 'Sync Note'], [0xED, 0x36], [0, 1, 2, 3, 6, 7, 4, 5]),
+        device('MX Phase 95', 'Modulation', ['Mix', 'Speed', 'Type', 'Mode', 'Output', 'Sync (On/Off)', 'Sync Note'], [0xF4, 0x36], [0, 1, 5, 6, 2, 3, 4]),
+        device('MX Vibe', 'Modulation', ['Mix', 'Vibe', 'Speed', 'Level', 'Depth', 'Output', 'Sync (On/Off)', 'Sync Note'], [0xF5, 0x36], [0, 1, 2, 6, 7, 3, 4, 5]),
+        device('Tremolo', 'Modulation', ['Rate', 'Depth', 'Waveform', 'Duty Cycle', 'Width', 'Smoothing', 'LFO Active', 'Fade In', 'Fade Out', 'Boost', 'Sync (On/Off)', 'Sync Note'], [0xDC, 0x36], [0, 10, 11, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+      ],
+      delay: [
+        device('Analog Delay', 'Delay', ['Mix', 'Feedback', 'High Pass', 'Low Pass', 'Ping Pong (On/Off)', 'Delay Time', 'Mod Rate', 'Mod Depth', 'Width', 'Drive', 'Sync (On/Off)', 'Sync Note'], [0xFA, 0x2E], [0, 1, 2, 3, 4, 10, 11, 5, 6, 7, 8, 9]),
+        device('Circular Delay', 'Delay', ['Mix', 'Tap Preset', 'Delay Time', 'Feedback', 'Diffusion', 'High Pass', 'Low Pass', 'Mod Rate', 'Mod Depth', 'Vintage Mode (On/Off)', 'Sync (On/Off)', 'Sync Note'], [0xFF, 0x2E], [0, 1, 10, 11, 2, 3, 4, 5, 6, 7, 8, 9]),
+        device('Digital Delay (ST)', 'Delay', ['Mix', 'Feedback', 'High Pass', 'Low Pass', 'Ping Pong (On/Off)', 'Delay Time', 'Mod Rate', 'Mod Depth', 'Width', 'Dyn Depth', 'Dyn Mode', 'Threshold', 'Attack', 'Release', 'Knee', 'Feedback Depth', 'Sync (On/Off)', 'Sync Note'], [0xFB, 0x2E], [0, 1, 2, 3, 4, 16, 17, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]),
+        device('Dual Delay', 'Delay', ['Mix', 'Delay Time L', 'Feedback L', 'X-Feedback', 'Delay Time R', 'Feedback R', 'High Pass', 'Low Pass', 'Mod Rate', 'Mod Depth', 'Link FBack (On/Off)', 'Dyn Depth', 'Dyn Mode', 'Threshold', 'Attack', 'Release', 'Knee', 'Feedback Depth', 'Sync L (On/Off)', 'Sync Note L', 'Sync R (On/Off)', 'Sync Note R'], [0xFC, 0x2E], [0, 18, 19, 1, 2, 3, 20, 21, 4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 6, 7, 8, 9]),
+        device('Dual Reverse Delay', 'Delay', ['Mix', 'Delay Time L', 'Feedback L', 'X-Feedback', 'Feedback Mode', 'Delay Time R', 'Feedback R', 'Overlap', 'Trig Threshold', 'Dyn Depth', 'Dyn Mode', 'Threshold', 'Attack', 'Release', 'Knee', 'Feedback Depth', 'High Pass', 'Low Pass', 'Link FBack (On/Off)', 'Sync (On/Off)', 'Sync Note L', 'Sync Note R'], [0xFE, 0x2E], [0, 19, 20, 1, 2, 3, 4, 21, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]),
+        device('Tape Delay', 'Delay', ['Mix', 'Feedback', 'High Pass', 'Low Pass', 'Drive', 'Delay Time', 'Wow', 'Flutter', 'Ping Pong (On/Off)', 'Sync (On/Off)', 'Sync Note'], [0xF4, 0x2E], [0, 1, 2, 3, 4, 9, 10, 5, 6, 7, 8])
+      ],
+      reverb: [
+        device('Ambience', 'Reverb', ['Mix', 'Size', 'Pre Delay', 'High Pass', 'Low Pass'], [0xC8, 0x3E]),
+        device('Cave', 'Reverb', ['Mix', 'Decay', 'Pre Delay', 'Damping', 'High Pass', 'Low Pass'], [0xC9, 0x3E]),
+        device('Hall', 'Reverb', ['Mix', 'Decay', 'Pre Delay', 'High Pass', 'Low Pass'], [0xC3, 0x3E]),
+        device('Mind Hall', 'Reverb', ['Mix', 'Decay', 'Pre Delay', 'High Pass', 'Low Pass', 'Damping'], [0xCB, 0x3E]),
+        device('Modulated', 'Reverb', ['Mix', 'Decay', 'Pre Delay', 'Mod Speed', 'Mod Depth', 'High Pass', 'Low Pass'], [0xC7, 0x3E]),
+        device('Room', 'Reverb', ['Mix', 'Decay', 'Pre Delay', 'High Pass', 'Low Pass'], [0xC0, 0x3E])
+]
+    };
+
+    const preFxModels = [].concat(deviceModels.overdrive, deviceModels.utility, deviceModels.wahFilter, deviceModels.compressor, deviceModels.pitch);
+    const postFx1Models = [].concat(deviceModels.postUtilityEQ, deviceModels.modulation);
+    const postFx2Models = [].concat(deviceModels.postUtilityEQ.slice(1), deviceModels.delay);
+    const postFx3Models = [].concat(deviceModels.postUtilityEQ.slice(1), deviceModels.reverb);
+
+    const state = {
+      device: null,
+      server: null,
+      c304: null,
+      c305: null,
+      midiAccess: null,
+      midiOutput: null,
+      connected: false,
+      selectedPreset: 1,
+      presetNames: new Map(),
+      captureNames: new Map(),
+      irNames: new Map(),
+      currentCapture: { name: '', id: '', inBank: true },
+      capture: {
+        on: true,
+        selectedSlot: null,
+        lastActiveSlot: 1
+      },
+      currentIR: { shortName: '', fullName: '', inBank: true },
+      cabIR: {
+        on: true,
+        selectedSlot: null,
+        lastActiveSlot: 1,
+        mic: 'Dynamic 57',
+        position: 1,
+        levelDb: 0,
+        highPassHz: 20,
+        lowPassHz: 20000,
+        paramsLoaded: false
+      },
+      feBytes: [],
+      feTimer: null,
+      stateMode: 'idle',
+      stateBytes: [],
+      stateTimer: null,
+      paramRefreshQueue: [],
+      pendingParamBlock: null,
+      pendingParamTimer: null,
+      protocol: { feSyncComplete: false, lastStateSync: 0, metadataLoaded: false, skipFXModelApply: false },
+      blocks: {
+        pre1: { title: 'Pre FX 1', key: 'pre1', color: 'var(--cyan)', model: 'None', on: false, models: [{ name: 'None', category: 'Bypass', params: [] }].concat(preFxModels), params: [] },
+        pre2: { title: 'Pre FX 2', key: 'pre2', color: 'var(--green)', model: 'None', on: false, models: [{ name: 'None', category: 'Bypass', params: [] }].concat(preFxModels), params: [] },
+        post1: { title: 'Post FX 1', key: 'post1', color: 'var(--purple)', model: 'None', on: false, models: [{ name: 'None', category: 'Bypass', params: [] }].concat(postFx1Models), params: [] },
+        post2: { title: 'Post FX 2', key: 'post2', color: 'var(--pink)', model: 'None', on: false, models: [{ name: 'None', category: 'Bypass', params: [] }].concat(postFx2Models), params: [] },
+        post3: { title: 'Post FX 3', key: 'post3', color: 'var(--red)', model: 'None', on: false, models: [{ name: 'None', category: 'Bypass', params: [] }].concat(postFx3Models), params: [] }
+      },
+      gate: { on: false, params: [knob('Reduction', 0, 50, rangeMeta(0, 100, 1, '%', 0))] },
+      amp: { gain: 64, level: 64, bass: 64, mid: 64, treble: 64 }
+    };
+
+    const blockSlotConfig = {
+      pre1:  { label: 'Pre FX 1',  modelSlot: 0x00, refreshSlot: 0x00, enableSlot: 0x04 },
+      pre2:  { label: 'Pre FX 2',  modelSlot: 0x01, refreshSlot: 0x01, enableSlot: 0x05 },
+      post1: { label: 'Post FX 1', modelSlot: 0x02, refreshSlot: 0x02, enableSlot: 0x06 },
+      post2: { label: 'Post FX 2', modelSlot: 0x03, refreshSlot: 0x03, enableSlot: 0x07 },
+      post3: { label: 'Post FX 3', modelSlot: 0x04, refreshSlot: 0x04, enableSlot: 0x08 }
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function log(message) {
+      const line = new Date().toLocaleTimeString() + ' ' + message;
+      console.log(line);
+    }
+
+    function hex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' '); }
+    function printableASCII(bytes) { return Array.from(bytes).map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join(''); }
+    function setStatus(text, connected = false) { $('status').textContent = text; $('dot').classList.toggle('connected', connected); }
+    function bytesFromHex(s) { return new Uint8Array(s.replaceAll(' ', '').match(/.{1,2}/g).map(h => parseInt(h, 16))); }
+
+    let gattWriteQueue = Promise.resolve();
+
+    async function writeC304(label, payload) {
+      const run = async () => {
+        if (!state.c304) { log('ERROR: not connected - C304 characteristic not available'); return; }
+        log('TX ' + label + ': ' + hex(payload));
+        await state.c304.writeValueWithResponse(payload);
+      };
+
+      const result = gattWriteQueue.then(run, run);
+      gattWriteQueue = result.catch(err => {
+        log('ERROR: BLE write failed for "' + label + '": ' + err);
+      });
+
+      return result;
+    }
+
+    async function connectAll() {
+      await connectNano();
+      await connectMIDI();
+      if (state.connected) {
+        await syncMetadataAndState();
+      }
+    }
+
+    async function connectNano() {
+      try {
+        if (!navigator.bluetooth) throw new Error('Web Bluetooth is not available. Use Chrome or Edge.');
+        setStatus('Requesting device...');
+        log('Requesting Nano Cortex...');
+
+        const device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: SERVICE_UUIDS });
+        state.device = device;
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+
+        setStatus('Connecting...');
+        log('Selected device: ' + (device.name || '(unnamed)'));
+
+        const server = await device.gatt.connect();
+        state.server = server;
+        log('Connected. Searching A002/A003 for C304/C305...');
+
+        state.c304 = null;
+        state.c305 = null;
+
+        for (const serviceUUID of SERVICE_UUIDS) {
+          try {
+            const service = await server.getPrimaryService(serviceUUID);
+            log('Service accessible: ' + serviceUUID);
+            const characteristics = await service.getCharacteristics();
+            for (const ch of characteristics) {
+              const uuid = ch.uuid.toLowerCase();
+              log('Characteristic: ' + uuid);
+              if (uuid === C304_UUID) { state.c304 = ch; log('Found C304 write characteristic'); }
+              if (uuid === C305_UUID) { state.c305 = ch; log('Found C305 notify characteristic'); }
+            }
+          } catch (err) {
+            log('Service unavailable ' + serviceUUID + ': ' + err.message);
+          }
+        }
+
+        if (!state.c304 || !state.c305) throw new Error('C304/C305 not found under A002/A003');
+        await state.c305.startNotifications();
+        state.c305.addEventListener('characteristicvaluechanged', onC305);
+
+        state.connected = true;
+        setStatus('Connected', true);
+        log('C305 notifications enabled. Loading metadata and current preset state...');
+      } catch (err) {
+        log('Connect failed: ' + err.message);
+        setStatus('Disconnected');
+      }
+    }
+
+    async function connectMIDI() {
+      try {
+        if (!navigator.requestMIDIAccess) throw new Error('Web MIDI is not available. Use Chrome or Edge.');
+        const access = await navigator.requestMIDIAccess({ sysex: false });
+        state.midiAccess = access;
+        const outputs = Array.from(access.outputs.values());
+        const nanoOutput = outputs.find(output => {
+          const name = (output.name || '').toLowerCase();
+          return name.includes('nano') || name.includes('cortex') || name.includes('neural');
+        }) || outputs[0];
+        if (!nanoOutput) throw new Error('No MIDI output found. Pair/connect Nano Cortex Bluetooth MIDI in macOS first.');
+        state.midiOutput = nanoOutput;
+        log('MIDI output selected: ' + nanoOutput.name);
+      } catch (err) {
+        log('MIDI connect failed: ' + err.message);
+      }
+    }
+
+    async function syncMetadataAndState() {
+      log('Sync started');
+
+      state.stateMode = 'metadata';
+      state.feBytes = [];
+      state.stateBytes = [];
+      state.protocol.feSyncComplete = false;
+
+      if (state.protocol.metadataLoaded) {
+        log('Metadata already loaded for this session; skipping FE metadata request.');
+
+        renderPresetSelect();
+
+        if (state.midiOutput) {
+          state.midiOutput.send([0xC0, state.selectedPreset - 1]);
+          log('MIDI PC sent: preset ' + state.selectedPreset + ', PC ' + (state.selectedPreset - 1));
+        }
+
+        setTimeout(requestCurrentPresetState, 500);
+        return;
+      }
+
+      await writeC304('FE metadata request', bytesFromHex('06 C0 08 03 01 00 00 00'));
+
+      setTimeout(() => {
+        state.selectedPreset = 1;
+        renderPresetSelect();
+
+        if (state.midiOutput) {
+          state.midiOutput.send([0xC0, 0]);
+          log('MIDI PC sent: preset 1, PC 0');
+        }
+
+        setTimeout(requestCurrentPresetState, 500);
+      }, 2200);
+    }
+
+    async function requestCurrentPresetState() {
+      state.stateMode = 'current';
+      state.stateBytes = [];
+      await writeC304('Current preset state request', bytesFromHex('0C C0 08 03 18 01 20 01 28 01 01 00 00 00'));
+    }
+
+    function onDisconnected() {
+      state.connected = false;
+      state.c304 = null;
+      state.c305 = null;
+      state.protocol.metadataLoaded = false;
+      state.protocol.feSyncComplete = false;
+      gattWriteQueue = Promise.resolve();
+      setStatus('Disconnected');
+      log('Disconnected.');
+    }
+
+    function onC305(event) {
+      const data = new Uint8Array(event.target.value.buffer.slice(0));
+      log('RX C305: ' + hex(data.slice(0, 24)) + (data.length > 24 ? ' ...' : ''));
+
+      if (data.length === 0) return;
+
+      if (isCabIRParamRefreshResponse(data)) {
+        handleCabIRParamRefreshResponse(data);
+        return;
+      }
+
+      if (isFXParamRefreshResponse(data)) {
+        handleFXParamRefreshResponse(data);
+        return;
+      }
+
+      if (data[0] === 0x10 && data[1] === 0xC0) {
+        log('Preset change ACK: ' + hex(data));
+        return;
+      }
+
+      if (isFEStreamPacket(data)) {
+        if (state.stateMode === 'current') {
+          appendCurrentStatePayload(data);
+          scheduleCurrentStateParse();
+        } else {
+          appendFEStreamPayload(data);
+          scheduleFEParse();
+        }
+        return;
+      }
+
+      parseCurrentPresetState(data);
+    }
+
+    function appendCurrentStatePayload(data) {
+      const payload = data.slice(2);
+      for (const b of payload) state.stateBytes.push(b);
+    }
+
+    function scheduleCurrentStateParse() {
+      if (state.stateTimer) clearTimeout(state.stateTimer);
+      state.stateTimer = setTimeout(parseBufferedCurrentState, 600);
+    }
+
+    function parseBufferedCurrentState() {
+      if (state.stateBytes.length === 0) return;
+
+      const bytes = state.stateBytes.slice();
+      log('CURRENT STATE FULL HEX: ' + hex(bytes));
+      log('CURRENT STATE FULL ASCII: ' + printableASCII(bytes));
+      const fields = parseProtoFields(bytes);
+
+      const captureSlot = fields[11] && fields[11][0] ? fields[11][0].value : 0;
+
+      state.capture.selectedSlot = captureSlot;
+      state.capture.on = captureSlot > 0;
+
+      if (captureSlot > 0) {
+        state.capture.lastActiveSlot = captureSlot;
+      }
+
+      state.cabIR.on = Boolean(fields[12] && fields[12][0]);
+
+      state.amp.gain = fields[3] && fields[3][0] ? fields[3][0].value : 0;
+      state.amp.level = fields[4] && fields[4][0] ? fields[4][0].value : 0;
+      state.amp.bass = fields[5] && fields[5][0] ? fields[5][0].value : 0;
+      state.amp.mid = fields[6] && fields[6][0] ? fields[6][0].value : 0;
+      state.amp.treble = fields[7] && fields[7][0] ? fields[7][0].value : 0;
+
+      state.gate.on = !(fields[54] && fields[54][0]);
+
+    if (fields[31] && fields[31][0]) {
+      log('FX enable field 31 raw: ' + hex(fields[31][0].raw));
+    }
+
+    if (fields[44] && fields[44][0]) {
+      const rawCaptureVolume = fields[44][0].value;
+      const captureDb = captureRawToDb(rawCaptureVolume);
+
+      state.captureVolumeDb = captureDb;
+      setCaptureVolumeUI(captureDb);
+
+      log('Current capture volume: ' + captureDb.toFixed(1) + ' dB raw=' + rawCaptureVolume);
+    }
+
+      const capture = fields[32] && fields[32][0] ? parseSelectedCaptureState(fields[32][0].raw) : null;
+      const ir = fields[33] && fields[33][0] ? parseSelectedIRState(fields[33][0].raw) : null;
+
+      if (capture) {
+
+          const resolvedName =
+              capture.name &&
+              !/^capture\s+\d+$/i.test(capture.name)
+                  ? capture.name
+                  : state.currentCapture.name;
+
+          state.currentCapture = {
+              name: resolvedName || '',
+              id: capture.id || '',
+              inBank: Array.from(state.captureNames.values()).some(
+                  name =>
+                      String(name).trim().toLowerCase() ===
+                      String(resolvedName || '').trim().toLowerCase()
+              )
+          };
+
+          const resolvedCaptureSlot = currentCaptureSlotIndex();
+          if (resolvedCaptureSlot) {
+            state.capture.selectedSlot = resolvedCaptureSlot;
+            state.capture.lastActiveSlot = resolvedCaptureSlot;
+          }
+      }
+
+      if (ir) {
+
+          const resolvedShortName =
+              ir.shortName &&
+              !/^ir\s+\d+$/i.test(ir.shortName)
+                  ? ir.shortName
+                  : state.currentIR.shortName;
+
+          state.currentIR = {
+              shortName: resolvedShortName || '',
+              fullName: ir.fullName || state.currentIR.fullName || '',
+              inBank: Array.from(state.irNames.values()).some(
+                  name =>
+                      String(name).trim().toLowerCase() ===
+                      String(resolvedShortName || '').trim().toLowerCase()
+              )
+          };
+
+        const parsedCabIR = parseCabIRNameParts(state.currentIR.fullName || state.currentIR.shortName);
+        if (!state.protocol.skipFXModelApply) {
+          if (parsedCabIR.mic) state.cabIR.mic = parsedCabIR.mic;
+          if (parsedCabIR.position !== null) state.cabIR.position = parsedCabIR.position;
+        }
+        state.cabIR.selectedSlot = currentIRSlotIndex();
+
+        if (state.cabIR.selectedSlot > 0) {
+          state.cabIR.lastActiveSlot = state.cabIR.selectedSlot;
+        }
+
+        log('Current cab/IR: ' + state.currentIR.shortName);
+      }
+
+      applyFXModelsFromCurrentState(fields);
+      applyFXEnabledStatesFromCurrentState(fields);
+
+      render();
+
+      log('CURRENT STATE BUFFER len=' + bytes.length);
+      log('CURRENT STATE capture=' + (state.currentCapture.name || 'unknown') + ', ir=' + (state.currentIR.shortName || 'unknown'));
+
+      state.stateBytes = [];
+      state.stateMode = 'idle';
+
+      requestCabIRParamRefresh();
+      queueFXParamRefreshes();
+    }
+
+    const captureSlider = document.getElementById('captureVolumeSlider');
+    const captureValue  = document.getElementById('captureVolumeValue');
+
+    captureSlider.addEventListener('input', () => {
+      captureValue.textContent =
+        Number(captureSlider.value).toFixed(1) + ' dB';
+    });
+
+    captureSlider.addEventListener('change', () => {
+      setCaptureVolumeDb(captureSlider.value);
+    });
+
+    
+    function applyFXModelsFromCurrentState(fields) {
+      // Capture/cab-IR/mic changes trigger a confirmatory state re-read,
+      // but can't actually change which FX model is loaded. The device may
+      // transiently report stale/wrong model IDs during these transitions
+      // (especially for Transpose and other 3-byte-ID models), so we skip
+      // model re-application entirely for those re-reads.
+      if (state.protocol.skipFXModelApply) {
+        state.protocol.skipFXModelApply = false;
+        log('FX model apply skipped (confirmatory re-read)');
+        return;
+      }
+
+      const fieldMap = {
+        pre1: 48,
+        pre2: 49,
+        post1: 50,
+        post2: 51,
+        post3: 52
+      };
+
+      Object.entries(fieldMap).forEach(([blockKey, fieldNumber]) => {
+        const entry = fields[fieldNumber] && fields[fieldNumber][0] ? fields[fieldNumber][0] : null;
+        const block = state.blocks[blockKey];
+
+        if (!entry || !block) {
+          // Field missing from current-state response — this can happen
+          // transiently during capture/cab-IR toggles. If we already have
+          // a valid model loaded, keep it rather than wiping to None.
+          if (!block || block.model === 'None') setBlockToNone(blockKey);
+          return;
+        }
+
+        const idHex = hex(entry.raw).replaceAll(' ', '');
+        log(block.title + ' raw current-state model field ' + fieldNumber + ': ' + idHex);
+
+        const model = findModelByCurrentStateID(block, idHex);
+
+        if (!model) {
+          log(block.title + ' current model ID not mapped: ' + idHex);
+          if (block.model === 'None') setBlockToNone(blockKey);
+          return;
+        }
+
+        // Only reset params if the model actually changed — otherwise we'd
+        // wipe the real current values (which haven't been read back yet)
+        // with defaults, causing a visible flash every time the state is
+        // re-read for unrelated reasons (cab mic change, capture toggle, etc.)
+        if (block.model !== model.name) {
+          block.model = model.name;
+          block.params = structuredClone(model.params || []);
+          log(block.title + ' model changed to: ' + model.name + ' [' + idHex + ']');
+        } else {
+          log(block.title + ' model unchanged: ' + model.name);
+        }
+      });
+    }
+
+    function applyFXEnabledStatesFromCurrentState(fields) {
+      const entry = fields[31] && fields[31][0] ? fields[31][0] : null;
+      if (!entry || !entry.raw || entry.raw.length < 5) {
+        log('FX bypass states not found.');
+        return;
+      }
+
+      const keys = ['pre1', 'pre2', 'post1', 'post2', 'post3'];
+
+      keys.forEach((key, index) => {
+        state.blocks[key].on = entry.raw[index] === 0;
+      });
+
+      log('FX bypass states: ' + keys.map((key, i) => key + '=' + (entry.raw[i] === 0 ? 'on' : 'off')).join(', '));
+    }
+
+
+
+    function currentIRSlotIndex() {
+      const current = String(state.currentIR.shortName || '').trim().toLowerCase();
+
+      for (let i = 1; i <= 5; i++) {
+        const name = String(state.irNames.get(i) || '').trim().toLowerCase();
+        if (name && current && name === current) return i;
+      }
+
+      const select = $('irSelect');
+      if (select && select.value !== 'library') return Number(select.value);
+
+      return null;
+    }
+
+    function currentCaptureSlotIndex() {
+      const current = String(state.currentCapture.name || '').trim().toLowerCase();
+      if (!current) return null;
+
+      for (let i = 1; i <= 25; i++) {
+        const name = String(state.captureNames.get(i) || '').trim().toLowerCase();
+        if (name && name === current) return i;
+      }
+
+      return null;
+    }
+
+    function parseCabIRNameParts(fullName) {
+      const parts = String(fullName || '').split('/').map(x => x.trim()).filter(Boolean);
+
+      if (parts.length >= 3) {
+        const posRaw = Number(parts[parts.length - 1]);
+        const mic = parts[parts.length - 2];
+
+        return {
+          baseName: parts.slice(0, parts.length - 2).join('/'),
+          mic,
+          position: Number.isFinite(posRaw) ? posRaw + 1 : null
+        };
+      }
+
+      return {
+        baseName: String(fullName || ''),
+        mic: null,
+        position: null
+      };
+    }
+
+    function cabIRLevelDbToNormalized(db) {
+      const value = clamp(Number(db), -96, 12);
+
+      if (value <= 0) {
+        return clamp(((value + 96) / 96) * 0.66212219, 0, 0.66212219);
+      }
+
+      return clamp(0.66212219 + (value / 12) * (1 - 0.66212219), 0, 1);
+    }
+
+    function cabIRLevelNormalizedToDb(normalized) {
+      const n = clamp(Number(normalized), 0, 1);
+
+      if (n <= 0.66212219) {
+        return (n / 0.66212219) * 96 - 96;
+      }
+
+      return ((n - 0.66212219) / (1 - 0.66212219)) * 12;
+    }
+
+    function cabIRRangeToNormalized(value, min, max) {
+      return clamp((Number(value) - min) / (max - min), 0, 1);
+    }
+
+    function cabIRNormalizedToRange(normalized, min, max, step) {
+      return roundToStep(min + clamp(Number(normalized), 0, 1) * (max - min), step || 1);
+    }
+
+    async function selectCaptureSlot(slotNumber) {
+      const slot = Number(slotNumber);
+      if (!Number.isFinite(slot) || slot < 0 || slot > 25) return;
+
+      state.capture.selectedSlot = slot;
+      state.capture.on = slot !== 0;
+
+      if (slot > 0) {
+        state.capture.lastActiveSlot = slot;
+      }
+
+      await writeC304(
+        slot === 0 ? 'Capture bypass' : 'Capture slot select ' + slot,
+        new Uint8Array([0x08, 0xC0, 0x18, 0x01, 0x20, slot, 0x1C, 0x00, 0x00, 0x00])
+      );
+
+      renderCaptureIR();
+      state.protocol.skipFXModelApply = true;
+      setTimeout(requestCurrentPresetState, 300);
+    }
+
+    async function selectCabIRSlot(slotNumber) {
+      const slot = Number(slotNumber);
+      if (!Number.isFinite(slot) || slot < 0 || slot > 5) return;
+
+      state.cabIR.selectedSlot = slot;
+      state.cabIR.on = slot !== 0;
+
+      if (slot > 0) {
+        state.cabIR.lastActiveSlot = slot;
+      }
+
+      await writeC304(
+        slot === 0 ? 'Cab/IR bypass' : 'Cab/IR slot select ' + slot,
+        new Uint8Array([0x08, 0xC0, 0x18, 0x03, 0x20, slot, 0x1C, 0x00, 0x00, 0x00])
+      );
+
+      renderCaptureIR();
+      state.protocol.skipFXModelApply = true;
+      setTimeout(requestCurrentPresetState, 300);
+
+      if (slot > 0) {
+        // Wait for the current-state request above to round-trip and finish
+        // parsing (it buffers notifications for ~600ms) before asking for
+        // params, so this reads the confirmed slot rather than the optimistic one.
+        setTimeout(requestCabIRParamRefresh, 1300);
+      }
+    }
+
+    async function requestCabIRParamRefresh() {
+      if (!state.cabIR.on) {
+        log('Cab/IR param refresh skipped: Cab/IR is bypassed.');
+        return;
+      }
+      const slot = currentIRSlotIndex();
+
+      if (!slot || slot < 1 || slot > 5) {
+        log('Cab/IR param refresh skipped: current slot is library/unknown.');
+        return;
+      }
+
+      state.cabIR.selectedSlot = slot;
+      state.cabIR.paramsLoaded = false;
+
+      await writeC304(
+        'Cab/IR param refresh slot ' + slot,
+        new Uint8Array([0x08, 0xC0, 0x18, 0x00, 0x20, slot - 1, 0x5F, 0x00, 0x00, 0x00])
+      );
+    }
+
+    function isCabIRParamRefreshResponse(data) {
+      return data.length > 20 &&
+        data[0] === 0x8E &&
+        data[1] === 0xC0 &&
+        data[2] === 0x08 &&
+        data[3] === 0x06;
+    }
+
+    function handleCabIRParamRefreshResponse(data) {
+      const text = printableASCII(data);
+
+      const parts = parseCabIRNameParts(text);
+      if (parts.mic) state.cabIR.mic = parts.mic;
+      if (parts.position !== null) state.cabIR.position = parts.position;
+
+      const paramBlob = extractCabIRParamBlob(data);
+
+      if (!paramBlob) {
+        log('Cab/IR parameter response received but no param blob found.');
+        renderCaptureIR();
+        return;
+      }
+
+      const values = parseCabIRParamBlob(paramBlob);
+
+      if (values.levelNorm !== null) state.cabIR.levelDb = cabIRLevelNormalizedToDb(values.levelNorm);
+      if (values.highPassNorm !== null) state.cabIR.highPassHz = cabIRNormalizedToRange(values.highPassNorm, 20, 800, 1);
+      if (values.lowPassNorm !== null) state.cabIR.lowPassHz = cabIRNormalizedToRange(values.lowPassNorm, 1000, 20000, 1);
+
+      state.cabIR.paramsLoaded = true;
+
+      log(
+        'Cab/IR params loaded: level=' + state.cabIR.levelDb.toFixed(1) +
+        ' dB, HPF=' + Math.round(state.cabIR.highPassHz) +
+        ' Hz, LPF=' + Math.round(state.cabIR.lowPassHz) +
+        ' Hz, mic=' + state.cabIR.mic +
+        ', position=' + state.cabIR.position
+      );
+
+      renderCaptureIR();
+    }
+
+    function extractCabIRParamBlob(data) {
+      for (let i = 0; i < data.length - 17; i++) {
+        if (data[i] === 0x42 && data[i + 1] === 0x0F) {
+          return data.slice(i + 2, i + 17);
+        }
+      }
+
+      return null;
+    }
+
+    function parseCabIRParamBlob(blob) {
+      const out = {
+        levelNorm: null,
+        highPassNorm: null,
+        lowPassNorm: null
+      };
+
+      for (let i = 0; i + 4 < blob.length;) {
+        const tag = blob[i++];
+
+        if ((tag === 0x0D || tag === 0x15 || tag === 0x1D) && i + 4 <= blob.length) {
+          const value = new DataView(blob.buffer, blob.byteOffset + i, 4).getFloat32(0, true);
+          if (tag === 0x0D) out.levelNorm = value;
+          if (tag === 0x15) out.highPassNorm = value;
+          if (tag === 0x1D) out.lowPassNorm = value;
+          i += 4;
+        } else {
+          break;
+        }
+      }
+
+      return out;
+    }
+
+    async function setCabIRFloatParam(label, paramId, normalized) {
+      await writeC304(
+        'Cab/IR ' + label,
+        new Uint8Array([0x09, 0xC0, paramId, ...float32LE(clamp(Number(normalized), 0, 1)), 0x5E, 0x00, 0x00, 0x00])
+      );
+    }
+
+    async function setCabIRLevelDb(db) {
+      const value = clamp(Number(db), -96, 12);
+      state.cabIR.levelDb = value;
+      await setCabIRFloatParam('level ' + value.toFixed(1) + ' dB', 0x2D, cabIRLevelDbToNormalized(value));
+    }
+
+    async function setCabIRHighPassHz(hz) {
+      const value = clamp(Number(hz), 20, 800);
+      state.cabIR.highPassHz = value;
+      await setCabIRFloatParam('high pass ' + Math.round(value) + ' Hz', 0x35, cabIRRangeToNormalized(value, 20, 800));
+    }
+
+    async function setCabIRLowPassHz(hz) {
+      const value = clamp(Number(hz), 1000, 20000);
+      state.cabIR.lowPassHz = value;
+      await setCabIRFloatParam('low pass ' + Math.round(value) + ' Hz', 0x3D, cabIRRangeToNormalized(value, 1000, 20000));
+    }
+
+    async function setCabIRMicPosition(mic, position) {
+      if (!isFactoryCabIR()) {
+        log('Cab mic/position ignored: current IR is not a factory cab slot.');
+        return;
+      }
+
+      const cabName = String(state.currentIR.shortName || '').trim();
+      const micName = String(mic || state.cabIR.mic || '').trim();
+
+      if (!cabName || !micName) {
+        log('Cab mic/position ignored: missing cab or mic name.');
+        return;
+      }
+
+      const pos = clamp(Math.round(Number(position || state.cabIR.position || 1)), 1, 6);
+      const posZero = pos - 1;
+
+      state.cabIR.mic = micName;
+      state.cabIR.position = pos;
+      renderCaptureIRExtraParams();
+
+      const cabBytes = Array.from(new TextEncoder().encode(cabName));
+      const micBytes = Array.from(new TextEncoder().encode(micName));
+      const innerLen = 8 + cabBytes.length + micBytes.length;
+
+      const payload = new Uint8Array([
+        0x00,
+        0xC0,
+        0x1A,
+        innerLen,
+        0x08,
+        0x00,
+        0x12,
+        cabBytes.length,
+        ...cabBytes,
+        0x18,
+        posZero,
+        0x22,
+        micBytes.length,
+        ...micBytes,
+        0x5E,
+        0x00,
+        0x00,
+        0x00
+      ]);
+      payload[0] = payload.length - 2;
+
+      await writeC304('Cab mic/position ' + micName + ' pos ' + pos, payload);
+    }
+
+    function setBlockToNone(blockKey) {
+      const block = state.blocks[blockKey];
+      if (!block) return;
+      const none = block.models.find(m => m.name === 'None');
+      block.model = 'None';
+      block.params = none && none.params ? structuredClone(none.params) : [];
+      block.on = false;
+    }
+
+    function findModelByCurrentStateID(block, idHex) {
+      const clean = String(idHex || '').toUpperCase();
+
+      const direct = block.models.find(model =>
+        model.id && hex(model.id).replaceAll(' ', '').toUpperCase() === clean
+      );
+
+      if (direct) return direct;
+
+      return null;
+    }
+
+    function queueFXParamRefreshes() {
+      state.paramRefreshQueue = FX_BLOCK_KEYS.filter(key => {
+        const block = state.blocks[key];
+        return block && block.on && block.model !== 'None' && block.params && block.params.length > 0;
+      });
+
+      state.pendingParamBlock = null;
+
+      if (state.paramRefreshQueue.length === 0) {
+        log('No active FX blocks to refresh.');
+        return;
+      }
+
+      log('Refreshing FX parameters: ' + state.paramRefreshQueue.map(key => state.blocks[key].title).join(', '));
+      requestNextFXParamRefresh();
+    }
+
+    async function requestNextFXParamRefresh() {
+      if (state.pendingParamBlock) return;
+
+      const blockKey = state.paramRefreshQueue.shift();
+      if (!blockKey) return;
+
+      const cfg = blockSlotConfig[blockKey];
+      const block = state.blocks[blockKey];
+
+      if (!cfg || !block) {
+        requestNextFXParamRefresh();
+        return;
+      }
+
+      state.pendingParamBlock = blockKey;
+
+      if (state.pendingParamTimer) clearTimeout(state.pendingParamTimer);
+      state.pendingParamTimer = setTimeout(() => {
+        log('FX parameter refresh timed out for ' + block.title);
+        state.pendingParamBlock = null;
+        requestNextFXParamRefresh();
+      }, 900);
+
+      await writeC304(
+        block.title + ' param refresh',
+        new Uint8Array([0x08, 0xC0, 0x08, 0x03, 0x18, cfg.refreshSlot, 0x89, 0x00, 0x00, 0x00])
+      );
+    }
+
+    function isFXParamRefreshResponse(data) {
+      return data.length >= 10 &&
+        data[1] === 0xC0 &&
+        data[2] === 0x08 &&
+        data[3] === 0x06 &&
+        data[4] === 0x22;
+    }
+
+    function handleFXParamRefreshResponse(data) {
+      const blockKey = state.pendingParamBlock;
+
+      if (!blockKey) {
+        log('FX parameter response received with no pending block.');
+        return;
+      }
+
+      const block = state.blocks[blockKey];
+      const floatByteLength = data[5];
+      const start = 6;
+      const end = start + floatByteLength;
+
+      if (!block || end > data.length) {
+        log('Invalid FX parameter response for ' + blockKey + ': ' + hex(data));
+        state.pendingParamBlock = null;
+        requestNextFXParamRefresh();
+        return;
+      }
+
+      const floats = decodeFloat32Array(data.slice(start, end));
+      applyFloatValuesToBlock(blockKey, floats);
+
+      if (state.pendingParamTimer) clearTimeout(state.pendingParamTimer);
+      state.pendingParamBlock = null;
+
+      log(block.title + ' params loaded: ' + floats.map(x => x.toFixed(3)).join(', '));
+      render();
+
+      setTimeout(requestNextFXParamRefresh, 80);
+    }
+
+    function decodeFloat32Array(bytes) {
+      const out = [];
+      const view = new DataView(new Uint8Array(bytes).buffer);
+
+      for (let i = 0; i + 3 < bytes.length; i += 4) {
+        out.push(view.getFloat32(i, true));
+      }
+
+      return out;
+    }
+
+    function applyFloatValuesToBlock(blockKey, floats) {
+      const block = state.blocks[blockKey];
+      if (!block || !block.params) return;
+
+      floats.forEach((normalized, index) => {
+        const param = block.params[index];
+        if (!param) return;
+        param.value = normalizedToParamValue(param, normalized);
+      });
+    }
+
+    function normalizedToParamValue(param, normalized) {
+      const meta = param.meta || rangeMeta(0, 10, 0.1, '', 1);
+      const n = clamp(Number(normalized), 0, 1);
+
+      if (meta.kind === 'enum') {
+        const maxIndex = Math.max(0, meta.options.length - 1);
+        return Math.max(0, Math.min(maxIndex, Math.round(n * maxIndex)));
+      }
+
+      return roundToStep(meta.min + (n * (meta.max - meta.min)), meta.step || 0.1);
+    }
+
+function parseSelectedCaptureState(payload) {
+      const fields = parseProtoFields(payload);
+      return {
+        enabled: fields[1] && fields[1][0] ? fields[1][0].value : null,
+        name: firstString(fields, 2),
+        id: firstString(fields, 3)
+      };
+    }
+
+    function parseSelectedIRState(payload) {
+      const fields = parseProtoFields(payload);
+      return {
+        enabled: fields[1] && fields[1][0] ? fields[1][0].value : null,
+        shortName: firstString(fields, 2),
+        fullName: firstString(fields, 3)
+      };
+    }
+
+    function isFEStreamPacket(data) {
+      if (data.length < 3) return false;
+      if (data[0] === 0xFE || data[0] === 0xFD || data[0] === 0xCE || data[0] === 0xD0) return true;
+
+      if ((state.stateMode === 'metadata' || state.stateMode === 'current') && (data[1] & 0x80) === 0x80) return true;
+
+      return false;
+    }
+
+    function appendFEStreamPayload(data) {
+      const payload = data.slice(2);
+      for (const b of payload) state.feBytes.push(b);
+    }
+
+    function parseCurrentPresetState(data) {
+      state.protocol.lastStateSync = Date.now();
+      log('CURRENT STATE CANDIDATE len=' + data.length + ': ' + hex(data));
+    }
+
+    function scheduleFEParse() {
+      if (state.feTimer) clearTimeout(state.feTimer);
+      state.feTimer = setTimeout(parseBufferedFE, 1500);
+    }
+
+    function parseBufferedFE() {
+      if (state.feBytes.length === 0) return;
+
+      if (state.protocol.metadataLoaded) {
+        log('FE metadata ignored: already loaded for this session.');
+        state.feBytes = [];
+        state.stateMode = 'idle';
+        return;
+      }
+
+      const bytes = state.feBytes.slice();
+      log('Parsing FE payload buffer: ' + bytes.length + ' bytes');
+      const parsed = parseStructuredFE(bytes);
+
+      state.captureNames = new Map();
+      parsed.captures.forEach((capture, idx) => {
+        const name = capture.name;
+        if (name && !/^capture\s+\d+$/i.test(name)) {
+          state.captureNames.set(idx + 1, name);
+        }
+      });
+
+      state.presetNames = new Map();
+      parsed.presets.forEach((preset, idx) => {
+        state.presetNames.set(idx + 1, preset.name || 'Empty');
+      });
+
+      state.irNames = new Map();
+      parsed.irs.forEach((ir, idx) => {
+        const name = ir.shortName;
+        if (name && !/^ir\s+\d+$/i.test(name)) {
+          state.irNames.set(idx + 1, name);
+        }
+      });
+
+      state.protocol.feSyncComplete = true;
+      state.protocol.metadataLoaded = true;
+
+      log('Structured FE parse: captures=' + parsed.captures.length + ', presets=' + parsed.presets.length + ', IRs=' + parsed.irs.length);
+      log('Metadata locked for this session.');
+
+      if (parsed.captures.length > 0) log('Capture sample: ' + parsed.captures.slice(0, 5).map(x => x.name).join(' | '));
+      if (parsed.presets.length > 0) log('Preset sample: ' + parsed.presets.slice(0, 8).map(x => x.name || 'Empty').join(' | '));
+      if (parsed.irs.length > 0) log('IR sample: ' + parsed.irs.map(x => x.shortName).join(' | '));
+
+     renderPresetSelect();
+      renderCaptureIR();
+
+      state.feBytes = [];
+      state.stateMode = 'idle';
+    }
+
+    function parseStructuredFE(bytes) {
+      const top = parseProtoFields(bytes);
+      const captures = (top[17] || []).filter(entry => entry.wire === 2).map(entry => parseCaptureRecord(entry.raw)).filter(record => record.id && record.name).slice(0, 25);
+      const presets = (top[18] || []).filter(entry => entry.wire === 2).map(entry => parsePresetRecord(entry.raw)).filter(record => isValidPresetRecord(record)).slice(0, 64);
+      while (presets.length < 64) presets.push({ name: '', captureName: '', captureID: '', irShortName: '', irFullName: '' });
+      const irs = (top[19] || []).filter(entry => entry.wire === 2).map(entry => parseIRRecord(entry.raw)).filter(record => record.shortName || record.fullName).slice(0, 5);
+      return { captures, presets, irs };
+    }
+
+    function parseCaptureRecord(payload) {
+      const fields = parseProtoFields(payload);
+      return { id: firstString(fields, 1), name: firstString(fields, 2), creator: nestedStrings(fields, 4).join(' / '), instrument: firstString(fields, 10) };
+    }
+
+    function parsePresetRecord(payload) {
+      const fields = parseProtoFields(payload);
+      return { name: firstString(fields, 1), captureName: firstString(fields, 7), captureID: firstString(fields, 8), irShortName: firstString(fields, 9), irFullName: firstString(fields, 10) };
+    }
+
+    function parseIRRecord(payload) {
+      const fields = parseProtoFields(payload);
+      return { shortName: firstString(fields, 1), fullName: firstString(fields, 3) };
+    }
+
+    function isValidPresetRecord(record) {
+      if (record.name === '') return true;
+      if (record.name === null || record.name === undefined) return false;
+      if (record.name.length > 120) return false;
+      return true;
+    }
+
+    function parseProtoFields(bytes) {
+      const fields = {};
+      let i = 0;
+      while (i < bytes.length) {
+        const tagInfo = readVarint(bytes, i);
+        if (!tagInfo) break;
+        const tag = tagInfo.value;
+        const field = tag >> 3;
+        const wire = tag & 0x07;
+        i = tagInfo.next;
+        if (!fields[field]) fields[field] = [];
+        if (wire === 0) {
+          const valueInfo = readVarint(bytes, i);
+          if (!valueInfo) break;
+          fields[field].push({ wire, raw: bytes.slice(i, valueInfo.next), value: valueInfo.value });
+          i = valueInfo.next;
+        } else if (wire === 1) {
+          if (i + 8 > bytes.length) break;
+          fields[field].push({ wire, raw: bytes.slice(i, i + 8) });
+          i += 8;
+        } else if (wire === 2) {
+          const lenInfo = readVarint(bytes, i);
+          if (!lenInfo) break;
+          const start = lenInfo.next;
+          const end = start + lenInfo.value;
+          if (end > bytes.length) break;
+          const raw = bytes.slice(start, end);
+          fields[field].push({ wire, raw, text: decodePrintable(raw) });
+          i = end;
+        } else if (wire === 5) {
+          if (i + 4 > bytes.length) break;
+          fields[field].push({ wire, raw: bytes.slice(i, i + 4) });
+          i += 4;
+        } else {
+          break;
+        }
+      }
+      return fields;
+    }
+
+    function firstString(fields, fieldNumber) {
+      const entries = fields[fieldNumber] || [];
+      for (const entry of entries) {
+        if (entry.wire !== 2) continue;
+        const text = decodePrintable(entry.raw);
+        if (text !== null) return text;
+      }
+      return '';
+    }
+
+    function nestedStrings(fields, fieldNumber) {
+      const entries = fields[fieldNumber] || [];
+      const out = [];
+      for (const entry of entries) {
+        if (entry.wire !== 2) continue;
+        const nested = parseProtoFields(entry.raw);
+        Object.keys(nested).forEach(key => {
+          nested[key].forEach(item => {
+            if (item.wire === 2) {
+              const text = decodePrintable(item.raw);
+              if (text) out.push(text);
+            }
+          });
+        });
+      }
+      return out;
+    }
+
+    function readVarint(bytes, offset) {
+      let value = 0n;
+      let shift = 0n;
+      for (let i = offset; i < Math.min(bytes.length, offset + 10); i++) {
+        const b = BigInt(bytes[i]);
+        value |= (b & 0x7Fn) << shift;
+        if ((b & 0x80n) === 0n) {
+          return { value: value > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(value), next: i + 1 };
+        }
+        shift += 7n;
+      }
+      return null;
+    }
+
+    function decodePrintable(bytes) {
+      if (bytes.length === 0) return '';
+      for (const b of bytes) if (b < 32 || b > 126) return null;
+      return new TextDecoder().decode(new Uint8Array(bytes));
+    }
+
+    async function selectPreset(preset) {
+      state.selectedPreset = preset;
+      state.capture.lastActiveSlot = null;
+      state.cabIR.lastActiveSlot = null;
+      renderPresetSelect();
+      if (!state.midiOutput) { log('Preset ' + preset + ' selected in UI, but MIDI is not connected yet.'); return; }
+      const pc = preset - 1;
+      state.midiOutput.send([0xC0, pc]);
+      log('MIDI PC sent: preset ' + preset + ', PC ' + pc);
+      setTimeout(() => writeC304('06C0 external preset change ack', bytesFromHex('06 C0 20 01 1E 00 00 00')), 50);
+      state.protocol.skipFXModelApply = false;
+      setTimeout(requestCurrentPresetState, 300);
+    }
+
+    async function refreshLists() { await syncMetadataAndState(); }
+
+    async function setCapture(slot) {
+      if (!Number.isFinite(slot) || slot < 1 || slot > 25) return;
+      const index = slot - 1;
+
+      state.capture.selectedSlot = slot;
+      state.capture.on = true;
+      state.capture.lastActiveSlot = slot;
+
+      await writeC304('08C0 capture change ' + slot, new Uint8Array([0x08, 0xC0, 0x18, 0x04, 0x20, index, 0x1C, 0x00, 0x00, 0x00]));
+
+      renderCaptureIR();
+      state.protocol.skipFXModelApply = true;
+      setTimeout(requestCurrentPresetState, 300);
+    }
+
+    async function savePreset() {
+      const name = state.presetNames.get(state.selectedPreset) || ('Preset ' + state.selectedPreset);
+      const nameBytes = new TextEncoder().encode(name);
+      const packet = new Uint8Array(12 + nameBytes.length);
+      let i = 0;
+      packet[i++] = nameBytes.length + 10;
+      packet[i++] = 0xC0;
+      packet[i++] = 0x08;
+      packet[i++] = 0x01;
+      packet[i++] = 0x18;
+      packet[i++] = state.selectedPreset - 1;
+      packet[i++] = 0x2A;
+      packet[i++] = nameBytes.length;
+      packet.set(nameBytes, i);
+      i += nameBytes.length;
+      packet[i++] = 0x03;
+      packet[i++] = 0x00;
+      packet[i++] = 0x00;
+      packet[i++] = 0x00;
+      await writeC304('save preset', packet);
+      setTimeout(() => writeC304('post-save refresh', bytesFromHex('0C C0 08 03 18 00 20 01 28 01 01 00 00 00')), 100);
+    }
+
+    async function setGateEnabled(enabled) {
+      const value = enabled ? 0x00 : 0x01;
+      await writeC304(
+        'Gate ' + (enabled ? 'ON' : 'OFF'),
+        new Uint8Array([0x0A, 0xC0, 0x08, 0x01, 0x18, 0x09, 0x20, value, 0x1F, 0x00, 0x00, 0x00])
+      );
+    }
+
+    function encodeVarint(value) {
+      const out = [];
+      while (value > 0x7F) {
+        out.push((value & 0x7F) | 0x80);
+        value >>= 7;
+      }
+      out.push(value);
+      return out;
+    }
+
+    function captureDbToRaw(db) {
+      const value = Math.max(-24, Math.min(12, Number(db)));
+
+      if (value <= 0) {
+        return Math.round(((value + 24) / 24) * 128);
+      }
+
+      return Math.round(128 + (value / 12) * 127);
+    }
+
+    function captureRawToDb(raw) {
+      raw = Math.max(0, Math.min(255, Number(raw)));
+
+      if (raw <= 128) {
+        return ((raw / 128) * 24) - 24;
+      }
+
+      return ((raw - 128) / 127) * 12;
+    }
+
+    function setCaptureVolumeUI(db) {
+      const slider = $('captureVolumeSlider');
+      const value = $('captureVolumeValue');
+      if (!slider || !value) return;
+
+      slider.value = Number(db).toFixed(1);
+      value.textContent = Number(db).toFixed(1) + ' dB';
+    }
+
+    async function setCaptureVolumeDb(db) {
+      const clampedDb = Math.max(-24, Math.min(12, Number(db)));
+      const raw = captureDbToRaw(clampedDb);
+      const rawBytes = encodeVarint(raw);
+
+      const payload = new Uint8Array([
+        0x09 + rawBytes.length,
+        0xC0,
+        0x18, 0x0A,
+        0x20, ...rawBytes,
+        0x28, 0x00,
+        0x1A, 0x00, 0x00, 0x00
+      ]);
+
+      await writeC304(
+        'Capture volume ' + clampedDb.toFixed(1) + ' dB',
+        payload
+      );
+    }
+
+    async function setGateReduction(percent) {
+      const pct = Math.max(0, Math.min(100, Math.round(percent)));
+      const encoded = pct + 108;
+      const encodedBytes = encodeVarint(encoded);
+      const payload = new Uint8Array([0x00, 0xC0, 0x18, 0x0B, 0x20, ...encodedBytes, 0x28, 0x00, 0x1A, 0x00, 0x00, 0x00]);
+      payload[0] = payload.length - 2;
+      await writeC304('Gate reduction ' + pct + '%', payload);
+    }
+
+    async function setFXModel(blockKey, modelName) {
+      const cfg = blockSlotConfig[blockKey];
+      const block = state.blocks[blockKey];
+      const model = block ? block.models.find(m => m.name === modelName) : null;
+
+      if (!cfg || !block) {
+        log('No block config for ' + blockKey);
+        return;
+      }
+
+      if (!model || !model.id) {
+        log('No ' + cfg.label + ' model ID mapped for ' + modelName);
+        return;
+      }
+
+      block.model = model.name;
+      block.params = structuredClone(model.params);
+      render();
+
+      const payload = new Uint8Array(
+        [7 + model.id.length, 0xC0, 0x18, cfg.modelSlot, 0x20]
+          .concat(model.id, [0x88, 0x00, 0x00, 0x00])
+      );
+
+      await writeC304(cfg.label + ' model select ' + model.name, payload);
+
+      setTimeout(() => {
+        state.paramRefreshQueue = [blockKey];
+        state.pendingParamBlock = null;
+        requestNextFXParamRefresh();
+      }, 120);
+    }
+
+    async function setFXBlockEnabled(blockKey, enabled) {
+      const cfg = blockSlotConfig[blockKey];
+
+      if (!cfg || cfg.enableSlot === null || cfg.enableSlot === undefined) {
+        log((cfg ? cfg.label : blockKey) + ' toggle not wired yet');
+        return;
+      }
+
+      const value = enabled ? 0x00 : 0x01;
+
+      await writeC304(
+        cfg.label + ' ' + (enabled ? 'ON' : 'OFF'),
+        new Uint8Array([0x0A, 0xC0, 0x08, 0x01, 0x18, cfg.enableSlot, 0x20, value, 0x1F, 0x00, 0x00, 0x00])
+      );
+    }
+
+    function float32LE(value) {
+      const buf = new ArrayBuffer(4);
+      new DataView(buf).setFloat32(0, value, true);
+      return Array.from(new Uint8Array(buf));
+    }
+
+    function paramDisplayValue(param) {
+      const meta = param.meta || rangeMeta(0, 10, 0.1, '', 1);
+
+      if (meta.kind === 'enum') return meta.options[param.value] || meta.options[0] || '';
+
+      const decimals = meta.decimals === null || meta.decimals === undefined ? decimalsFromStep(meta.step || 0.1) : meta.decimals;
+      return Number(param.value).toFixed(decimals) + (meta.unit ? ' ' + meta.unit : '');
+    }
+
+    function paramValueToNormalized(param) {
+      const meta = param.meta || rangeMeta(0, 10, 0.1, '', 1);
+
+      if (meta.kind === 'enum') {
+        const maxIndex = Math.max(1, meta.options.length - 1);
+        return clamp(param.value / maxIndex, 0, 1);
+      }
+
+      return clamp((Number(param.value) - meta.min) / (meta.max - meta.min), 0, 1);
+    }
+
+    async function setFXParam(blockKey, param, rawValue = null) {
+      const cfg = blockSlotConfig[blockKey];
+      if (!cfg) return;
+
+      if (rawValue !== null && rawValue !== undefined) param.value = rawValue;
+
+      const normalized = paramValueToNormalized(param);
+
+      const payload = new Uint8Array([
+        0x0F, 0xC0,
+        0x08, 0x01,
+        0x18, cfg.modelSlot,
+        0x20, param.index,
+        0x2D,
+        ...float32LE(normalized),
+        0x63, 0x00, 0x00, 0x00
+      ]);
+
+      await writeC304(cfg.label + ' param ' + param.name + '=' + paramDisplayValue(param), payload);
+    }
+
+    function setParamValue(blockKey, param, rawValue, shouldSend) {
+      const meta = param.meta || rangeMeta(0, 10, 0.1, '', 1);
+      let value = Number(rawValue);
+
+      if (Number.isNaN(value)) return;
+
+      if (meta.kind === 'enum') {
+        value = Math.max(0, Math.min(meta.options.length - 1, Math.round(value)));
+      } else {
+        value = roundToStep(clamp(value, meta.min, meta.max), meta.step || 0.1);
+      }
+
+      param.value = value;
+      render();
+
+      if (shouldSend && blockKey === 'gate') {
+        setGateReduction(value);
+        return;
+      }
+
+      if (shouldSend && FX_BLOCK_KEYS.includes(blockKey)) {
+        setFXParam(blockKey, param);
+      }
+    }
+
+    function promptManualValue(blockKey, param) {
+      const meta = param.meta || rangeMeta(0, 10, 0.1, '', 1);
+
+      if (meta.kind === 'enum') {
+        const entered = window.prompt('Enter option number for ' + param.name + String.fromCharCode(10) + meta.options.map((x, i) => i + ': ' + x).join(String.fromCharCode(10)), String(param.value));
+        if (entered === null) return;
+        setParamValue(blockKey, param, Number(entered), true);
+        return;
+      }
+
+      const entered = window.prompt(
+        'Enter value for ' + param.name + ' (' + meta.min + ' to ' + meta.max + (meta.unit ? ' ' + meta.unit : '') + ')',
+        String(param.value)
+      );
+
+      if (entered === null) return;
+      setParamValue(blockKey, param, Number(entered), true);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function decimalsFromStep(step) {
+      const s = String(step);
+      return s.includes('.') ? s.split('.')[1].length : 0;
+    }
+
+    function roundToStep(value, step) {
+      if (!step) return value;
+      const rounded = Math.round(value / step) * step;
+      return Number(rounded.toFixed(decimalsFromStep(step)));
+    }
+
+    function isParamDisabled(block, param) {
+      if (!block || !param) return false;
+
+      const name = normaliseName(param.name);
+
+      if (name.includes('sync note')) {
+        const sync = relatedSyncParam(block.params, param.name);
+        return sync ? isSyncOff(sync) : false;
+      }
+
+      if (name === 'delay time' || name === 'delay time l' || name === 'delay time r' ||
+          name === 'rate' || name === 'speed') {
+        const sync = relatedSyncParam(block.params, param.name);
+        return sync ? !isSyncOff(sync) : false;
+      }
+
+      return false;
+    }
+
+    function relatedSyncParam(params, paramName) {
+      const n = normaliseName(paramName);
+
+      if (n.includes(' l')) {
+        return params.find(p => normaliseName(p.name) === 'sync l') || params.find(p => normaliseName(p.name) === 'sync');
+      }
+
+      if (n.includes(' r')) {
+        return params.find(p => normaliseName(p.name) === 'sync r') || params.find(p => normaliseName(p.name) === 'sync');
+      }
+
+      return params.find(p => normaliseName(p.name) === 'sync');
+    }
+
+    function isSyncOff(syncParam) {
+      if (!syncParam || !syncParam.meta || syncParam.meta.kind !== 'enum') return true;
+
+      const label = String(syncParam.meta.options[syncParam.value] || '').toLowerCase();
+      return label === 'off';
+    }
+
+    function renderPresetSelect() {
+      const select = $('presetSelect');
+      select.innerHTML = '';
+      for (let i = 1; i <= 64; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = i + '. ' + (state.presetNames.get(i) || ('Preset ' + i));
+        if (i === state.selectedPreset) option.selected = true;
+        select.appendChild(option);
+      }
+    }
+
+    function renderCaptureIR() {
+      const capture = $('captureSelect');
+      capture.innerHTML = '';
+
+      let selectedCaptureValue = 'library';
+
+      for (let i = 1; i <= 25; i++) {
+        const name = state.captureNames.get(i) || ('Capture ' + i);
+        const option = document.createElement('option');
+        option.value = String(i);
+        option.textContent = i + '. ' + name;
+        capture.appendChild(option);
+
+        if (state.currentCapture.name && name.trim().toLowerCase() === state.currentCapture.name.trim().toLowerCase()) {
+          selectedCaptureValue = String(i);
+        }
+      }
+
+      const libraryOption = document.createElement('option');
+      libraryOption.value = 'library';
+      libraryOption.textContent = 'LIBRARY';
+      capture.appendChild(libraryOption);
+
+      capture.value = selectedCaptureValue;
+      $('currentCaptureText').textContent = state.capture.on
+        ? 'Current: ' + (state.currentCapture.name || '—') + (state.currentCapture.inBank ? '' : '  (Library)')
+        : 'Current: Capture bypassed';
+
+      capture.onchange = e => {
+        if (e.target.value === 'library') {
+          log('Library captures must be managed through Cortex Cloud.');
+          renderCaptureIR();
+          return;
+        }
+
+        setCapture(Number(e.target.value));
+      };
+
+      const ir = $('irSelect');
+      ir.innerHTML = '';
+
+      let selectedIRValue = 'library';
+
+      for (let i = 1; i <= 5; i++) {
+        const name = state.irNames.get(i) || ('IR ' + i);
+        const option = document.createElement('option');
+        option.value = String(i);
+        option.textContent = i + '. ' + name;
+        ir.appendChild(option);
+
+        if (state.currentIR.shortName && name.trim().toLowerCase() === state.currentIR.shortName.trim().toLowerCase()) {
+          selectedIRValue = String(i);
+        }
+      }
+
+      const irLibraryOption = document.createElement('option');
+      irLibraryOption.value = 'library';
+      irLibraryOption.textContent = 'LIBRARY';
+      ir.appendChild(irLibraryOption);
+
+      ir.value = selectedIRValue;
+      $('currentIRText').textContent = state.cabIR.on
+       ? 'Current: ' + (state.currentIR.shortName || '—') + (state.currentIR.inBank ? '' : '  (Library)')
+       : 'Current: Cab/IR bypassed';
+
+      renderCaptureIRExtraParams();
+
+      ir.onchange = async e => {
+        if (e.target.value === 'library') {
+          log('Library IRs must be managed through Cortex Cloud.');
+          renderCaptureIR();
+          return;
+        }
+
+        const slot = Number(e.target.value);
+        const name = state.irNames.get(slot) || ('IR ' + slot);
+
+        state.currentIR.shortName = name;
+        state.currentIR.fullName = name;
+        state.currentIR.inBank = true;
+        state.currentIR.slot = slot;
+
+        renderCaptureIR();
+
+        await selectCabIRSlot(slot);
+      };
+
+    const captureToggle = $('captureToggle');
+    if (captureToggle) {
+      captureToggle.classList.toggle('on', state.capture.on);
+      captureToggle.onclick = () => {
+        if (state.capture.on) {
+          selectCaptureSlot(0);
+        } else {
+          const target = state.capture.lastActiveSlot;
+          if (!target) log('No remembered Capture slot for this preset; defaulting to slot 1.');
+          setCapture(target || 1);
+        }
+      };
+    }
+
+    const cabToggle = $('cabIRToggle');
+    if (cabToggle) {
+      cabToggle.classList.toggle('on', state.cabIR.on);
+      cabToggle.onclick = () => {
+        if (state.cabIR.on) {
+          selectCabIRSlot(0);
+        } else {
+          const target = state.cabIR.lastActiveSlot;
+          if (!target) log('No remembered Cab/IR slot for this preset; defaulting to slot 1.');
+          selectCabIRSlot(target || 1);
+        }
+      };
+    }
+
+    capture.disabled = !state.capture.on;
+    capture.style.opacity = state.capture.on ? '1' : '0.35';
+
+    ir.disabled = !state.cabIR.on;
+    ir.style.opacity = state.cabIR.on ? '1' : '0.35';
+
+    const captureVolSlider = $('captureVolumeSlider');
+    if (captureVolSlider) {
+      captureVolSlider.disabled = !state.capture.on;
+      const captureVolWrap = captureVolSlider.closest('.placeholder-param') || captureVolSlider.parentElement;
+      if (captureVolWrap) captureVolWrap.style.opacity = state.capture.on ? '1' : '0.35';
+    }
+    }
+    
+    function renderCaptureIRExtraParams() {
+      const captureBox = $('captureExtraParams');
+      if (captureBox) {
+        captureBox.innerHTML = '';
+      }
+
+      renderCabIRControls();
+    }
+
+    function isFactoryCabIR() {
+      const full = String(state.currentIR.fullName || '');
+      const short = String(state.currentIR.shortName || '');
+    
+      const micNames = [
+        'Condenser 184',
+        'Condenser 414',
+        'Dynamic 421',
+        'Dynamic 57',
+        'Ribbon 160'
+      ];
+
+      return micNames.some(mic =>
+        full.includes('/' + mic + '/') ||
+        full.includes(mic) ||
+        short.includes('/' + mic + '/')
+      );
+    }
+
+    function renderCabIRControls() {
+      const box = $('irExtraParams');
+      if (!box) return;
+
+      const isFactory = isFactoryCabIR();
+      const on = state.cabIR.on;
+
+      box.innerHTML = '';
+      box.style.gridTemplateColumns = 'repeat(5, minmax(70px, 1fr))';
+
+      box.appendChild(renderSmallSelect('Mic', 'cabMicSelect', [
+        'Condenser 184',
+        'Condenser 414',
+        'Dynamic 421',
+        'Dynamic 57',
+        'Ribbon 160'
+      ], isFactory && on, state.cabIR.mic, value => {
+        setCabIRMicPosition(value, state.cabIR.position);
+      }));
+
+      box.appendChild(renderSmallSelect('Position', 'cabPositionSelect', [
+        '1', '2', '3', '4', '5', '6'
+      ], isFactory && on, String(state.cabIR.position || 1), value => {
+        setCabIRMicPosition(state.cabIR.mic, Number(value));
+      }));
+
+      box.appendChild(renderVerticalSlider('Level', 'cabLevelSlider', -96, 12, 0.1, 'dB', state.cabIR.levelDb, value => {
+        setCabIRLevelDb(value);
+      }, on));
+
+      box.appendChild(renderVerticalSlider('High Pass', 'cabHighPassSlider', 20, 800, 1, 'Hz', state.cabIR.highPassHz, value => {
+        setCabIRHighPassHz(value);
+      }, on));
+
+      box.appendChild(renderVerticalSlider('Low Pass', 'cabLowPassSlider', 1000, 20000, 1, 'Hz', state.cabIR.lowPassHz, value => {
+        setCabIRLowPassHz(value);
+      }, on));
+    }
+
+    function renderSmallSelect(label, id, options, enabled, selectedValue, onChange) {
+      const wrap = document.createElement('div');
+      wrap.className = 'placeholder-param';
+      wrap.style.opacity = enabled ? '1' : '0.35';
+      wrap.style.pointerEvents = enabled ? 'auto' : 'none';
+
+      const name = document.createElement('div');
+      name.className = 'param-name';
+      name.textContent = label;
+
+      const select = document.createElement('select');
+      select.id = id;
+      select.disabled = !enabled;
+      select.style.fontSize = '11px';
+      select.style.padding = '6px';
+
+      options.forEach(optionText => {
+        const option = document.createElement('option');
+        option.value = optionText;
+        option.textContent = optionText;
+        if (String(optionText) === String(selectedValue)) option.selected = true;
+        select.appendChild(option);
+      });
+
+      select.addEventListener('change', e => {
+        if (!enabled || !onChange) return;
+        onChange(e.target.value);
+      });
+
+      wrap.appendChild(name);
+      wrap.appendChild(select);
+      return wrap;
+    }
+
+    function renderVerticalSlider(label, id, min, max, step, unit, value, onChange, enabled) {
+      const wrap = document.createElement('div');
+      wrap.className = 'placeholder-param';
+      wrap.style.opacity = enabled === false ? '0.35' : '1';
+      wrap.style.pointerEvents = enabled === false ? 'none' : 'auto';
+
+      const name = document.createElement('div');
+      name.className = 'param-name';
+      name.textContent = label;
+
+      const slider = document.createElement('input');
+      slider.id = id;
+      slider.type = 'range';
+      slider.min = min;
+      slider.max = max;
+      slider.step = step;
+      slider.value = value;
+      slider.disabled = enabled === false;
+      slider.style.width = '90px';
+
+      const valueText = document.createElement('div');
+      valueText.className = 'value-text';
+      valueText.textContent = formatCabIRSliderValue(value, unit, step);
+
+      slider.addEventListener('input', () => {
+        valueText.textContent = formatCabIRSliderValue(slider.value, unit, step);
+      });
+
+      slider.addEventListener('change', () => {
+        if (enabled === false || !onChange) return;
+        onChange(Number(slider.value));
+      });
+
+      wrap.appendChild(name);
+      wrap.appendChild(slider);
+      wrap.appendChild(valueText);
+      return wrap;
+    }
+
+    function formatCabIRSliderValue(value, unit, step) {
+      const decimals = decimalsFromStep(step || 1);
+      return Number(value).toFixed(decimals) + ' ' + unit;
+    }
+
+function renderGate() {
+      const gate = $('gateToggle');
+      gate.classList.toggle('on', state.gate.on);
+      gate.onclick = () => {
+        state.gate.on = !state.gate.on;
+        renderGate();
+        setGateEnabled(state.gate.on);
+      };
+
+      const box = $('gateParams');
+      box.innerHTML = '';
+      box.appendChild(renderParam('gate', state.gate.params[0], 'var(--white)', true, state.gate));
+    }
+
+    function renderParam(blockKey, param, color, canSend, block = null) {
+      const disabled = block ? isParamDisabled(block, param) : false;
+
+      if (param.meta && param.meta.kind === 'enum') {
+        if (param.meta.options.length > 6) return renderSteppedParam(blockKey, param, color, canSend, disabled);
+        return renderSwitchParam(blockKey, param, color, canSend, disabled);
+      }
+
+      return renderKnobParam(blockKey, param, color, canSend, disabled);
+    }
+
+    function renderSwitchParam(blockKey, param, color, canSend, disabled) {
+      const p = document.createElement('div');
+      p.className = 'switch-param' + (disabled ? ' param-disabled' : '');
+      p.style.setProperty('--block-color', color);
+
+      const name = document.createElement('div');
+      name.className = 'param-name';
+      name.textContent = param.name;
+      p.appendChild(name);
+
+      const pill = document.createElement('button');
+      pill.className = 'switch-pill';
+      pill.textContent = param.meta.options[param.value] || param.meta.options[0] || '—';
+      pill.title = param.meta.options.join(' → ');
+
+      pill.addEventListener('click', () => {
+        if (disabled) return;
+        const next = (Number(param.value) + 1) % param.meta.options.length;
+        param.value = next;
+        render();
+
+        if (canSend && FX_BLOCK_KEYS.includes(blockKey)) setFXParam(blockKey, param);
+      });
+
+      p.appendChild(pill);
+      return p;
+    }
+
+    function renderSteppedParam(blockKey, param, color, canSend, disabled) {
+      const p = document.createElement('div');
+      p.className = 'stepped-param' + (disabled ? ' param-disabled' : '');
+      p.style.setProperty('--block-color', color);
+
+      const name = document.createElement('div');
+      name.className = 'param-name';
+      name.textContent = param.name;
+      p.appendChild(name);
+
+      const select = document.createElement('select');
+      select.className = 'stepped-select';
+      select.disabled = disabled;
+
+      param.meta.options.forEach((label, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = label;
+        opt.selected = idx === param.value;
+        select.appendChild(opt);
+      });
+
+      select.addEventListener('change', e => {
+        param.value = Number(e.target.value);
+        render();
+        if (canSend && FX_BLOCK_KEYS.includes(blockKey)) setFXParam(blockKey, param);
+      });
+
+      p.appendChild(select);
+      return p;
+    }
+
+    function renderKnobParam(blockKey, param, color, canSend, disabled) {
+      const meta = param.meta || rangeMeta(0, 10, 0.1, '', 1);
+
+      const p = document.createElement('div');
+      p.className = 'knob-param' + (disabled ? ' param-disabled' : '');
+      p.style.setProperty('--block-color', color);
+
+      const name = document.createElement('div');
+      name.className = 'param-name';
+      name.textContent = param.name;
+
+      const knobEl = document.createElement('div');
+      knobEl.className = 'knob';
+
+      const normalized = paramValueToNormalized(param);
+      const pct = Math.round(normalized * 73);
+      const angle = -135 + normalized * 270;
+
+      knobEl.style.setProperty('--pct', pct + '%');
+      knobEl.style.setProperty('--angle', angle + 'deg');
+      knobEl.title = disabled ? 'Locked by Sync setting' : 'Drag for coarse adjustment, scroll for fine adjustment';
+
+      knobEl.addEventListener('wheel', e => {
+        e.preventDefault();
+        if (disabled) return;
+        const delta = e.deltaY < 0 ? (meta.step || 0.1) : -(meta.step || 0.1);
+        setParamValue(blockKey, param, Number(param.value) + delta, canSend);
+      });
+
+      knobEl.addEventListener('pointerdown', e => {
+        if (disabled) return;
+        e.preventDefault();
+
+        const dragStartY = e.clientY;
+        const dragStartValue = Number(param.value);
+        const range = meta.max - meta.min;
+        let latestValue = dragStartValue;
+        let didDrag = false;
+
+        const onMove = moveEvent => {
+          didDrag = true;
+          const delta = ((dragStartY - moveEvent.clientY) / 95) * range;
+          latestValue = roundToStep(dragStartValue + delta, meta.step || 0.1);
+          setParamValue(blockKey, param, latestValue, false);
+        };
+
+        const onUp = () => {
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          window.removeEventListener('pointercancel', onUp);
+
+          if (!didDrag) return;
+
+          if (canSend && FX_BLOCK_KEYS.includes(blockKey)) setFXParam(blockKey, param);
+          if (canSend && blockKey === 'gate') setGateReduction(param.value);
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+      });
+
+      const value = document.createElement('div');
+      value.className = 'value-text';
+      value.textContent = paramDisplayValue(param);
+      value.addEventListener('click', () => {
+        if (!disabled) promptManualValue(blockKey, param);
+      });
+
+      p.appendChild(name);
+      p.appendChild(knobEl);
+      p.appendChild(value);
+      return p;
+    }
+
+    const AMP_KNOBS = [
+      { key: 'gain', label: 'Gain' },
+      { key: 'bass', label: 'Bass' },
+      { key: 'mid', label: 'Mid' },
+      { key: 'treble', label: 'Treble' },
+      { key: 'level', label: 'Level' }
+    ];
+
+    function renderAmp() {
+      const box = $('ampKnobs');
+      if (!box) return;
+      box.innerHTML = '';
+      AMP_KNOBS.forEach(k => box.appendChild(renderAmpKnob(k.key, k.label)));
+    }
+
+    function renderAmpKnob(key, label) {
+      const p = document.createElement('div');
+      p.className = 'knob-param';
+      p.style.setProperty('--block-color', 'var(--white)');
+
+      const name = document.createElement('div');
+      name.className = 'param-name';
+      name.textContent = label;
+
+      const knobEl = document.createElement('div');
+      knobEl.className = 'knob';
+
+      const raw = state.amp[key];
+      const normalized = clamp(raw / 255, 0, 1);
+      const pct = Math.round(normalized * 73);
+      const angle = -135 + normalized * 270;
+
+      knobEl.style.setProperty('--pct', pct + '%');
+      knobEl.style.setProperty('--angle', angle + 'deg');
+      knobEl.title = 'Drag for coarse adjustment, scroll for fine adjustment';
+
+      const value = document.createElement('div');
+      value.className = 'value-text';
+      value.textContent = Math.round((raw / 255) * 100) + '%';
+      value.addEventListener('click', () => {
+        const entered = window.prompt('Enter value for ' + label + ' (0 to 100%)', String(Math.round((raw / 255) * 100)));
+        if (entered === null) return;
+        const pctValue = clamp(Number(entered), 0, 100);
+        if (Number.isNaN(pctValue)) return;
+        applyRaw((pctValue / 100) * 255, true);
+      });
+
+      const applyRaw = (newRaw, send) => {
+        state.amp[key] = clamp(Math.round(newRaw), 0, 255);
+        renderAmp();
+        if (send) setAmpKnob(key, state.amp[key]);
+      };
+
+      knobEl.addEventListener('wheel', e => {
+        e.preventDefault();
+        applyRaw(state.amp[key] + (e.deltaY < 0 ? 3 : -3), true);
+      });
+
+      knobEl.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        const dragStartY = e.clientY;
+        const dragStartValue = state.amp[key];
+        let didDrag = false;
+
+        const onMove = moveEvent => {
+          didDrag = true;
+          const delta = ((dragStartY - moveEvent.clientY) / 95) * 255;
+          applyRaw(dragStartValue + delta, false);
+        };
+
+        const onUp = () => {
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          window.removeEventListener('pointercancel', onUp);
+          if (didDrag) setAmpKnob(key, state.amp[key]);
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+      });
+
+      p.appendChild(name);
+      p.appendChild(knobEl);
+      p.appendChild(value);
+      return p;
+    }
+
+    // Confirmed against real captured BLE write packets:
+    // 0B C0 18 <id> 20 <value varint> 28 00 1A 00 00 00
+    // id: gain=0, level=1, bass=2, mid=3, treble=4
+    // (separate ID space from the read-side current-state field numbers 3-7)
+    const AMP_WRITE_IDS = {
+      gain: 0x00,
+      level: 0x01,
+      bass: 0x02,
+      mid: 0x03,
+      treble: 0x04
+    };
+
+    async function setAmpKnob(key, rawValue) {
+      const id = AMP_WRITE_IDS[key];
+
+      if (id === undefined) {
+        log('Amp ' + key + ' set to raw=' + rawValue + ' (write not yet confirmed -- not sent to device)');
+        return;
+      }
+
+      const valueBytes = encodeVarint(clamp(Math.round(rawValue), 0, 255));
+      const payload = new Uint8Array([0x00, 0xC0, 0x18, id, 0x20, ...valueBytes, 0x28, 0x00, 0x1A, 0x00, 0x00, 0x00]);
+      payload[0] = payload.length - 2;
+
+      await writeC304('Amp ' + key + ' = ' + rawValue, payload);
+    }
+
+    function renderBlock(key, block) {
+      const el = document.createElement('div');
+      el.className = 'block ' + (block.on ? 'active' : '');
+      el.style.setProperty('--block-color', block.color);
+
+      const head = document.createElement('div');
+      head.className = 'block-head';
+      head.innerHTML = '<h2>' + block.title + '</h2>';
+
+      const toggle = document.createElement('div');
+      toggle.className = 'toggle-switch ' + (block.on ? 'on' : '');
+      toggle.innerHTML = '<div class="toggle-dot"></div>';
+      toggle.addEventListener('click', () => {
+        if (!block.on && block.model === 'None') return;
+        block.on = !block.on;
+        render();
+        setFXBlockEnabled(key, block.on);
+      });
+
+      head.appendChild(toggle);
+      el.appendChild(head);
+
+      const select = document.createElement('select');
+      select.className = 'model-select';
+
+      const grouped = {};
+      block.models.forEach(model => {
+        const category = model.category || 'Other';
+        if (!grouped[category]) grouped[category] = [];
+        grouped[category].push(model);
+      });
+
+      Object.entries(grouped).forEach(([category, models]) => {
+        const group = document.createElement('optgroup');
+        group.label = category;
+
+        models.forEach(model => {
+          const opt = document.createElement('option');
+          opt.value = model.name;
+          opt.textContent = model.name;
+          opt.selected = model.name === block.model;
+          group.appendChild(opt);
+        });
+
+        select.appendChild(group);
+      });
+
+      select.addEventListener('change', e => {
+        const selected = block.models.find(m => m.name === e.target.value);
+
+        block.model = e.target.value;
+        block.params = selected && selected.params ? structuredClone(selected.params) : [];
+        render();
+
+        if (selected && selected.id) setFXModel(key, e.target.value);
+      });
+
+      el.appendChild(select);
+
+      const div = document.createElement('div');
+      div.className = 'divider';
+      el.appendChild(div);
+
+      const grid = document.createElement('div');
+      grid.className = 'param-grid';
+
+      const modelDef = block.models.find(m => m.name === block.model);
+      const orderedParams = modelDef && modelDef.displayOrder
+        ? modelDef.displayOrder.map(i => block.params[i]).filter(Boolean)
+        : block.params;
+
+      orderedParams.forEach(param => grid.appendChild(renderParam(key, param, block.color, FX_BLOCK_KEYS.includes(key), block)));
+
+      el.appendChild(grid);
+      return el;
+    }
+
+    function render() {
+      renderPresetSelect();
+      renderCaptureIR();
+      renderGate();
+      renderAmp();
+      const chain = $('chain');
+      chain.innerHTML = '';
+      Object.entries(state.blocks).forEach(([key, block]) => chain.appendChild(renderBlock(key, block)));
+    }
+
+    function disconnect() {
+      if (state.device && state.device.gatt.connected) {
+        state.device.gatt.disconnect();
+      } else {
+        onDisconnected();
+      }
+    }
+
+    $('connectBtn').addEventListener('click', connectAll);
+    $('refreshBtn').addEventListener('click', refreshLists);
+    $('disconnectBtn').addEventListener('click', disconnect);
+    $('saveBtn').addEventListener('click', savePreset);
+    $('presetSelect').addEventListener('change', e => selectPreset(Number(e.target.value)));
+
+    if (!navigator.bluetooth) $('unsupported').style.display = 'block';
+
+    render();
+    log('Prototype loaded.');
+    log('Protocol mode: manual sync + protobuf FE metadata parser + current-state UI update + typed parameter UI');
+  </script>
+</body>
+</html>
